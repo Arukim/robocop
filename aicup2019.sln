@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29418.71
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "aicup2019", "aicup2019\aicup2019.fsproj", "{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8C498A03-E26C-4244-9866-B3DDAB8BEAB6}
+	EndGlobalSection
+EndGlobal
