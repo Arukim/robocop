@@ -3,6 +3,7 @@
 open System
 open System.IO;
 open System.Net.Sockets;
+open Robocop.Utils
 
 module Runner =
     type T(host, port, token: string) =
@@ -25,15 +26,18 @@ module Runner =
                 let message = Model.ServerMessageGame.readFrom reader
                 
                 if message.IsSome then
-                   let playerView = message.Value
-                   let actions = playerView.Game.Units 
+                    let playerView = message.Value
+
+                    if playerView.Game.CurrentTick = 0 then Dumper.dumpGameMap(playerView.Game)
+
+                    let actions = playerView.Game.Units 
                                         |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
                                         |> Array.map(fun x -> 
                                             (x.Id, myStrategy.getAction(x, playerView.Game, debug))) 
                                         |> Map.ofArray                                                       
 
-                   (Model.PlayerMessageGame.ActionMessage {Action = actions}).writeTo writer
-                   writer.Flush()
+                    (Model.PlayerMessageGame.ActionMessage {Action = actions}).writeTo writer
+                    writer.Flush()
                 loop()
 
             loop()
