@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29418.71
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "aicup2019", "aicup2019\aicup2019.fsproj", "{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "aicup2019Tests", "aicup2019Tests\aicup2019Tests.fsproj", "{D27AB7D7-1538-4533-80E1-164599C01BF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB0BD5E1-0201-47C2-8F54-5EAE20C5B440}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D27AB7D7-1538-4533-80E1-164599C01BF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D27AB7D7-1538-4533-80E1-164599C01BF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D27AB7D7-1538-4533-80E1-164599C01BF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D27AB7D7-1538-4533-80E1-164599C01BF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

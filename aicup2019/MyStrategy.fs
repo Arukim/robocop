@@ -1,6 +1,7 @@
 ﻿namespace AiCup2019
 
 open AiCup2019.Model
+open Robocop.Map
 
 type MyStrategy() =
     static member DistanceSqr (a: Vec2Double, b: Vec2Double) = 
@@ -16,6 +17,13 @@ type MyStrategy() =
                                                                         | _ -> None)
                                             |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                             |> Seq.tryFind(fun _ -> true)
+
+        Tracing.buildTraceMap game (single (unit.Position.X),single (unit.Position.Y))
+            |> Seq.iter(fun cell -> debug.draw(CustomData.T.Rect {
+                                                    Pos = {X = (single cell.X) + 0.5f; Y = (single cell.Y) + 0.5f}
+                                                    Size = {X = 0.1f; Y = 0.1f}
+                                                    Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
+                                                    }))
 
         let mutable targetPos = unit.Position
 

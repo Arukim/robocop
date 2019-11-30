@@ -32,8 +32,11 @@
     <Compile Include="Model\ServerMessageGame.fs" />
     <Compile Include="Model\UnitAction.fs" />
     <Compile Include="Model\PlayerMessageGame.fs" />
+    <Compile Include="Utils\Vector2.fs" />
+    <Compile Include="Utils\Geom.fs" />
     <Compile Include="Utils\Matrices.fs" />
     <Compile Include="Utils\Dumper.fs" />
+    <Compile Include="Map\Tracing.fs" />
     <Compile Include="Debug.fs" />
     <Compile Include="MyStrategy.fs" />
     <Compile Include="Runner.fs" />

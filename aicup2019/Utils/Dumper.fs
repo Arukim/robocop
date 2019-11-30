@@ -8,8 +8,8 @@ module Dumper =
     let dumpGameMap (game: Game) = 
         let dump = game.Level.Tiles 
                     |> Matrices.rotateConterClockwise
-                    |> Array.map(fun row -> 
-                        row |> Array.map(fun cell ->
+                    |> Seq.map(fun row -> 
+                        row |> Seq.map(fun cell ->
                                  match cell with
                                         | Tile.Empty -> '.'
                                         | Tile.Platform -> '^'
@@ -17,6 +17,7 @@ module Dumper =
                                         | Tile.Wall -> '#'
                                         | Tile.JumpPad -> 'T'
                                         | _ -> '*') 
+                            |> Array.ofSeq
                             |> System.String)
 
         let hash = (hash game.Level.Tiles).ToString "X"
