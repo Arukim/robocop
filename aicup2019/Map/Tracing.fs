@@ -7,22 +7,20 @@ open System
 
 module Tracing =
 
-    type cell = {X: int; Y: int}
-
     let castRay (tiles:Tile[][]) (start: single*single) (finish: single*single) =
         let vFrom, vTo = Vector2.fromTuple start, Vector2.fromTuple finish
-        let inc:Vector2 = vFrom |> Vector2.sub vTo
-                                |> Vector2.Normalize 
-                                |> Vector2.mulS 0.5f
+        let inc: Vector2 = vFrom |> Vector2.sub vTo
+                                 |> Vector2.Normalize 
+                                 |> Vector2.mulS 0.5f
         
             
         let v = Vector2.fromTuple start + Vector2.One * 0.5f
-        let cell = {X = Int32.MaxValue; Y = Int32.MaxValue}
+        let cell = {X = Int32.MaxValue; Y = Int32.MaxValue}: Cell
 
-        let rec trace (tiles:Tile[][]) (vTo:Vector2) prevCell pos =
+        let rec trace (tiles:Tile[][]) (vTo: Vector2) prevCell pos =
             seq { 
                 let newPos = pos + inc
-                let newCell = {X = int newPos.X; Y = int newPos.Y}
+                let newCell = {X = int newPos.X; Y = int newPos.Y}: Cell
                 if newCell <> prevCell then yield newCell
                 if Vector2.Distance(newPos, vTo) > 0.2f && tiles.[newCell.X].[newCell.Y] <> Tile.Wall then
                     yield! trace tiles vTo newCell newPos
