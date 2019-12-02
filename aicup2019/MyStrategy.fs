@@ -34,15 +34,32 @@ type MyStrategy() =
         //                                            Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
         //                                            }))
 
+        location.Grounds 
+            |> Seq.iteri (fun i p ->
+                                    let cell = p.Cells |> Seq.head
+                                    debug.draw(CustomData.T.Rect {
+                                        Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
+                                        Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
+                                        Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
+                                        }))
+
+        location.Ladders 
+            |> Seq.iteri (fun i p ->
+                                    let cell = p.Cells |> Seq.head
+                                    debug.draw(CustomData.T.Rect {
+                                        Pos = {X = (single cell.X)  + 0.5f; Y = (single cell.Y)}
+                                        Size = {X = 0.25f; Y = single (p.Cells |> Seq.length)}
+                                        Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f)/ 255.0f; A = 1.0f}
+                                        }))
 
         location.Platforms 
-                   |> Seq.iteri (fun i p ->
-                                           let cell = p.Cells |> Seq.head
-                                           debug.draw(CustomData.T.Rect {
-                                               Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
-                                               Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
-                                               Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
-                                               }))                        
+                  |> Seq.iteri (fun i p ->
+                                          let cell = p.Cells |> Seq.head
+                                          debug.draw(CustomData.T.Rect {
+                                              Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
+                                              Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
+                                              Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f + single (25 * i)); A = 1.0f}
+                                              }))
 
         let mutable targetPos = unit.Position
 

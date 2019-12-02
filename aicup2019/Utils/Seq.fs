@@ -8,5 +8,3 @@ module Seq =
         if f x then incr i
         !i)
         |> Seq.map snd
-    
-
