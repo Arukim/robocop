@@ -30,6 +30,6 @@ module Matrices =
     let allTilesG gen tiles = 
         let width, height = Array.length tiles, Array.length tiles.[0]
         seq {
-            for x in 0..width do
-                for y in 0..height do
+            for x in 0..width-1 do
+                for y in 0..height-1 do
                    yield gen x y tiles.[x].[y] }    

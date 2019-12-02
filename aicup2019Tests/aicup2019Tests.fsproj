@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Map\ZonesTests.fs" />
     <Compile Include="Utils\GeomTests.fs" />
     <Compile Include="Utils\MatricesTests.fs" />
     <Compile Include="Program.fs" />

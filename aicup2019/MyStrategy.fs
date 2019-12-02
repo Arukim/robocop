@@ -8,6 +8,9 @@ type MyStrategy() =
         (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y)
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
+        let location = new Zones.Location()
+        location.Parse(game.Level.Tiles)
+
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
                                         |> Array.sortBy(fun u -> MyStrategy.DistanceSqr(u.Position, unit.Position))
                                         |> Seq.tryFind(fun _ -> true)
@@ -32,7 +35,14 @@ type MyStrategy() =
         //                                            }))
 
 
-                                
+        location.Platforms 
+                   |> Seq.iteri (fun i p ->
+                                           let cell = p.Cells |> Seq.head
+                                           debug.draw(CustomData.T.Rect {
+                                               Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
+                                               Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
+                                               Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
+                                               }))                        
 
         let mutable targetPos = unit.Position
 

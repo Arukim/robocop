@@ -16,38 +16,48 @@ module Zones =
         member _.Neighbours : List<Link<Zone>> = []
         member _.Cells : List<Cell> = []
 
-    type ZonePlatform(cells) =
+    type ZoneGround(cells: seq<Cell>) =
         member _.Cells = cells
-
-    let buildPlatforms g (cells: seq<Cell>) = 
+    
+    /// <summary> builds horizontal walls from input cells
+    /// applying <c> g </c> function on results
+    /// </summary>
+    let buildGrounds g (cells: seq<Cell>) = 
         cells
-            |> Seq.groupBy (fun x -> x.Y) 
+            |> Seq.groupBy (fun x -> x.X) 
             |> Seq.map (fun kv -> snd kv
+                                    |> Seq.rev
                                     |> Seq.pairwise
-                                    |> Seq.filter (fun (a,b) -> b.Y - a.Y <> 1)
+                                    |> Seq.filter (fun (a,b) -> a.Y - b.Y > 2)
                                     |> Seq.map (fun (_,b) -> b))
             |> Seq.collect(fun x -> x)
-                                        |> Seq.groupBy (fun x -> x.X)
+                                    |> Seq.groupBy (fun x -> x.Y)
             |> Seq.map (fun kv -> snd kv
+                                    |> Seq.map (fun s -> seq {s;s})
+                                    |> Seq.collect (fun x -> x)
                                     |> Seq.pairwise
-                                    |> Seq.splitBy(fun (a,b) -> b.X - a.X <> 1)
-                                    |> Seq.map(fun x -> g x))
+                                    |> Seq.splitBy (fun (a,b) -> b.X - a.X > 1)
+                                    |> Seq.map (fun x -> x 
+                                                        |> Seq.map (fun t -> match t with
+                                                                                | (a,b) when b.X - a.X < 2 -> seq{a; b}
+                                                                                | (_) -> Seq.empty)
+                                                        |> Seq.collect (fun x -> x)
+                                                        |> Seq.distinct
+                                                        |> g))
             |> Seq.collect(fun x -> x)
     
     type Location() =
-        let platforms = Array.empty<ZonePlatform>
-        member val Platforms : ZonePlatform[] = platforms with get, set
+        let platforms = Array.empty<ZoneGround>
+        member val Platforms : ZoneGround[] = platforms with get, set
         member this.Parse tiles =
             let cells = tiles |> Matrices.allTilesG 
                          (fun x y tile -> { Cell= {X=x;Y=y}; Tile = tile})
                          |> Seq.filter (fun x -> x.Tile <> Tile.Empty)
             
-            let p = cells |> Seq.filter (fun x -> x.Tile = Tile.Platform)
+            let p = cells |> Seq.filter (fun x -> x.Tile = Tile.Wall)
                                   |> Seq.map (fun x -> x.Cell)
-                                  |> buildPlatforms (fun set -> new ZonePlatform(set |> Seq.map (fun (a,_) -> a)))
+                                  |> buildGrounds (fun set -> new ZoneGround(set))
                                   |> Array.ofSeq
             this.Platforms <- p
-            
-            0
 
     
