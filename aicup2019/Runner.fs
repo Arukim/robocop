@@ -25,8 +25,8 @@ module Runner =
             let rec loop() = 
                 let message = Model.ServerMessageGame.readFrom reader
                 
-                if message.IsSome then
-                    let playerView = message.Value
+                if message.PlayerView.IsSome then
+                    let playerView = message.PlayerView.Value
 
                     if playerView.Game.CurrentTick = 0 then Dumper.dumpGameMap(playerView.Game)
 

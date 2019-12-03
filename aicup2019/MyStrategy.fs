@@ -13,13 +13,13 @@ type MyStrategy() =
                                         |> Seq.tryFind(fun _ -> true)
 
         let nearestWeapon = game.LootBoxes |> Array.choose(fun b -> match b.Item with
-                                                                        | Item.T.WeaponItem _ -> Some b.Position
+                                                                        | Item.Weapon _ -> Some b.Position
                                                                         | _ -> None)
                                             |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                             |> Seq.tryFind(fun _ -> true)
 
         Tracing.buildTraceMap game (single (unit.Position.X),single (unit.Position.Y))
-            |> Seq.iter(fun cell -> debug.draw(CustomData.T.Rect {
+            |> Seq.iter(fun cell -> debug.draw(CustomData.Rect {
                                                     Pos = {X = (single cell.X) + 0.5f; Y = (single cell.Y) + 0.5f}
                                                     Size = {X = 0.1f; Y = 0.1f}
                                                     Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
@@ -32,7 +32,7 @@ type MyStrategy() =
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
 
-        debug.draw(CustomData.T.Log {Text = sprintf "Target pos: %A" targetPos })
+        debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
         let aim: Vec2Double = match nearestEnemy with
                                 | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y} 
