@@ -13,7 +13,7 @@ type MyStrategy() =
                                         |> Seq.tryFind(fun _ -> true)
 
         let nearestWeapon = game.LootBoxes |> Array.choose(fun b -> match b.Item with
-                                                                        | Item.Weapon _ -> Some b.Position
+                                                                        | Item.WeaponItem _ -> Some b.Position
                                                                         | _ -> None)
                                             |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                             |> Seq.tryFind(fun _ -> true)
@@ -31,16 +31,19 @@ type MyStrategy() =
         //                                            Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
         //                                            }))
 
+
+                                
+
         let mutable targetPos = unit.Position
 
         if not unit.Weapon.IsSome && nearestWeapon.IsSome then
             targetPos <- nearestWeapon.Value
-        else if unit.Health < 66 && nearestHealthPack.IsSome then
+        else if unit.Health < 90 && nearestHealthPack.IsSome then
             targetPos <- nearestHealthPack.Value
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
 
-        debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
+        //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
         let aim: Vec2Double = match nearestEnemy with
                                 | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y} 
@@ -49,14 +52,24 @@ type MyStrategy() =
         let mutable jump = targetPos.Y > unit.Position.Y
 
         if targetPos.X > unit.Position.X && game.Level.Tiles.[(int unit.Position.X + 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
-        if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
-                        
+        if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true        
+        
+        let checkGrenadeSafety pos aim tiles =
+            let dist = Tracing.castRay tiles ((single pos.X),(single pos.Y)) ((single aim.X),(single aim.Y)) |> Seq.length
+            debug.draw(CustomData.Log {Text = sprintf "Dist is: %A" dist })
+            printf "Dist is: %A\n" dist
+            dist > 3
+
+        let shoot = match unit.Weapon with
+                        | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position aim game.Level.Tiles
+                        | _ -> true
+
         {
             Velocity = targetPos.X - unit.Position.X
             Jump = jump
             JumpDown = not jump
             Aim = aim
-            Shoot = true
+            Shoot = shoot
             SwapWeapon = false
             PlantMine = false
         }          

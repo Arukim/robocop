@@ -9,8 +9,7 @@ module Tracing =
 
     type cell = {X: int; Y: int}
 
-
-    let private castRay (tiles:Tile[][]) (start: single*single) (finish: single*single) =
+    let castRay (tiles:Tile[][]) (start: single*single) (finish: single*single) =
         let vFrom, vTo = Vector2.fromTuple start, Vector2.fromTuple finish
         let inc:Vector2 = vFrom |> Vector2.sub vTo
                                 |> Vector2.Normalize 

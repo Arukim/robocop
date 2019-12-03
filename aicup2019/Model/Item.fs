@@ -27,17 +27,17 @@ type ItemMine = struct end with
     static member readFrom(reader: System.IO.BinaryReader) = new ItemMine()
 type Item = 
     | HealthPack of ItemHealthPack
-    | Weapon of ItemWeapon
+    | WeaponItem of ItemWeapon
     | Mine of ItemMine
     with
     member this.writeTo(writer: System.IO.BinaryWriter) =
         match this with
             | HealthPack value -> value.writeTo writer
-            | Weapon value -> value.writeTo writer
+            | WeaponItem value -> value.writeTo writer
             | Mine value -> value.writeTo writer
     static member readFrom(reader: System.IO.BinaryReader) =
         match reader.ReadInt32() with
             | 0 -> HealthPack (ItemHealthPack.readFrom reader)
-            | 1 -> Weapon (ItemWeapon.readFrom reader)
+            | 1 -> WeaponItem (ItemWeapon.readFrom reader)
             | 2 -> Mine (ItemMine.readFrom reader)
             | x -> failwith (sprintf "Unexpected CustomDataType %d" x)
