@@ -2,14 +2,17 @@
 
 open AiCup2019.Model
 open Robocop.Map
+open System
 
 type MyStrategy() =
+    let location: Zones.Location = new Zones.Location();
     static member DistanceSqr (a: Vec2Double, b: Vec2Double) = 
         (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y)
+
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
-        let location = new Zones.Location()
-        location.Parse(game.Level.Tiles)
+        
+        location.Parse(game.Level.Tiles)       
 
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
                                         |> Array.sortBy(fun u -> MyStrategy.DistanceSqr(u.Position, unit.Position))
@@ -37,7 +40,7 @@ type MyStrategy() =
         location.Grounds 
             |> Seq.iteri (fun i p ->
                                     let cell = p.Cells |> Seq.head
-                                    debug.draw(CustomData.T.Rect {
+                                    debug.draw(CustomData.Rect {
                                         Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
                                         Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
                                         Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
@@ -46,7 +49,7 @@ type MyStrategy() =
         location.Ladders 
             |> Seq.iteri (fun i p ->
                                     let cell = p.Cells |> Seq.head
-                                    debug.draw(CustomData.T.Rect {
+                                    debug.draw(CustomData.Rect {
                                         Pos = {X = (single cell.X)  + 0.5f; Y = (single cell.Y)}
                                         Size = {X = 0.25f; Y = single (p.Cells |> Seq.length)}
                                         Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f)/ 255.0f; A = 1.0f}
@@ -55,7 +58,7 @@ type MyStrategy() =
         location.Platforms 
                   |> Seq.iteri (fun i p ->
                                           let cell = p.Cells |> Seq.head
-                                          debug.draw(CustomData.T.Rect {
+                                          debug.draw(CustomData.Rect {
                                               Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
                                               Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
                                               Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f + single (25 * i)); A = 1.0f}
@@ -81,7 +84,7 @@ type MyStrategy() =
         if targetPos.X > unit.Position.X && game.Level.Tiles.[(int unit.Position.X + 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
         if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true        
         
-        let checkGrenadeSafety pos aim tiles =
+        let checkGrenadeSafety (pos:Vec2Double) (aim:Vec2Double) tiles =
             let dist = Tracing.castRay tiles ((single pos.X),(single pos.Y)) ((single aim.X),(single aim.Y)) |> Seq.length
             debug.draw(CustomData.Log {Text = sprintf "Dist is: %A" dist })
             printf "Dist is: %A\n" dist
@@ -91,8 +94,13 @@ type MyStrategy() =
                         | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position aim game.Level.Tiles
                         | _ -> true
 
+        let maxVel curr tgt =
+            if tgt > curr then 10.0 else -10.0
+
+        let velocity = if (unit.Position.Y - targetPos.Y) >= -0.5 then maxVel unit.Position.X targetPos.X else targetPos.X - unit.Position.X
+
         {
-            Velocity = targetPos.X - unit.Position.X
+            Velocity = velocity
             Jump = jump
             JumpDown = not jump
             Aim = aim
