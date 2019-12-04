@@ -1,7 +1,7 @@
 ﻿namespace AiCup2019
 
 type Debug(writer) =
-    member inline this.draw(customData) =
+    member _.draw(customData) =
 #if DEBUG
         let message : Model.PlayerMessageGameCustomDataMessage = {Data = customData}
         message.writeTo writer
