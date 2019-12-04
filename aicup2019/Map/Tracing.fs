@@ -28,7 +28,7 @@ module Tracing =
 
         trace tiles vTo cell v
 
-    let castRay2 (tiles:Tile[][]) (start: Vector2) (finish: Vector2) =
+    let castRay2 (tiles:Tile[][]) collisionFilter (start: Vector2) (finish: Vector2) =
            let inc: Vector2 = start |> Vector2.sub finish
                                     |> Vector2.Normalize 
                                     |> Vector2.mulS 0.1f
@@ -36,7 +36,7 @@ module Tracing =
            let rec trace (tiles:Tile[][]) (inc: Vector2) (vTo: Vector2) pos =
                 let newPos = pos + inc
                 let newCell = {X = int newPos.X; Y = int newPos.Y}: Cell
-                if Vector2.DistanceSquared(newPos, vTo) <= 0.2f*0.2f || tiles.[newCell.X].[newCell.Y] = Tile.Wall then
+                if Vector2.DistanceSquared(newPos, vTo) <= 0.2f*0.2f || collisionFilter tiles.[newCell.X].[newCell.Y] then
                     pos
                 else trace tiles inc vTo newPos
 

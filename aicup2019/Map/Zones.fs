@@ -6,23 +6,29 @@ open System.Numerics
 open System
 
 module Zones =
+    let maxJump = 5.0f
+
     type CellTile = {Cell: Cell; Tile: Tile}
 
     type ConnectionType = Walk | JumpUp | JumpDown
 
     type Connection = {Type: ConnectionType}
 
-    type Link<'a> = {Target: 'a; Connection: Connection}
-        
+    type Link<'a> = {Target: 'a; Connection: Connection}        
 
     type ZoneGround(cells: array<Cell>) =
         member _.Cells = cells
-        member _.TopEdges=
-            let head, tail = cells |> Array.head, cells |> Array.last
-            seq { single (head.X), single (head.Y + 1); (single tail.X) + 1.0f, single (tail.Y + 1)}
+        member _.EdgeCells (tiles:Tile[][]) = 
+                let head, tail = cells |> Array.head, cells |> Array.last
+                let a = if tiles.[head.X - 1].[head.Y] = Tile.Empty then Some head else None
+                let b = if tiles.[tail.X + 1].[tail.Y] = Tile.Empty then Some tail else None
+                a,b
 
     type ZoneLadder(cells: array<Cell>) =
         member _.Cells = cells
+        member _.TopBottomEdges=
+            let head, tail = cells |> Array.head, cells |> Array.last
+            seq { single head.X, single head.Y + 0.5f; single tail.X, single tail.Y + 1.0f}
         
     type ZonePlatform(cells: array<Cell>) =
         member _.Cells = cells
@@ -92,6 +98,8 @@ module Zones =
             |> Seq.collect(fun x -> x)
 
     type Location() =
+        let collisionFilter cell =
+            cell = Tile.Wall || cell = Tile.Ladder || cell = Tile.Platform
         let grounds = Array.empty<ZoneGround>
         let ladders = Array.empty<ZoneLadder>
         let platforms = Array.empty<ZonePlatform>
@@ -111,21 +119,60 @@ module Zones =
                                     | _ -> false
                 | _ -> false
 
-        member this.EdgeParse (tiles:Tile[][]) =
-            let edges = this.Grounds |> Seq.map(fun x -> x.TopEdges)
+        member this.EdgeUpGroundParse (tiles:Tile[][]) =        
+            let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
+                                                         seq {
+                                                                match a with Some t -> yield t.toLeftTop | None -> ignore()
+                                                                match b with Some t -> yield t.toRightTop | None -> ignore()
+                                                         }) 
                                      |> Seq.collect(fun x -> x)
-
             let cross = seq { for a in edges do
-                                for b in edges do
-                                    if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
+                                    for b in edges do
+                                        if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
+                                        |> Array.ofSeq
 
-            cross |> Array.ofSeq |> Array.choose(fun x ->
-                                                        let a, b = x
-                                                        let trace = Tracing.castRay2 tiles a b
-                                                        let diff = Vector2.Distance(trace, b)
-                                                        match diff with
-                                                            | x when x < 1.0f -> Some(a, trace)
-                                                            | _ -> None)
+            cross
+                |> Array.filter(fun (a,b) -> a.Y < b.Y && (Vector2.dist a b) <= maxJump)
+                |> Array.choose(fun (a,b) ->
+                                            let trace = Tracing.castRay2 tiles collisionFilter a b
+                                            let diff = Vector2.Distance(trace, b)
+                                            match diff with
+                                                | x when x < 1.0f -> Some(a, trace)
+                                                | _ -> None)
+
+        member this.EdgeDownGroundParse (tiles:Tile[][]) =
+            let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
+                                                         seq {
+                                                                match a with Some t -> yield! seq {t.toLeftTopExtra ; t.toLeftBottomExtra;} | None -> ignore()
+                                                                match b with Some t -> yield! seq {t.toRightTopExtra; t.toRightBottomExtra} | None -> ignore()
+                                                         })                                    
+                                     |> Seq.collect(fun x -> x)
+            let ladders = this.Ladders |> Seq.collect(fun x -> x.Cells)
+                                       |> Seq.map(fun x -> seq { x.toMidTop; x.toLeftTop; x.toRightMid})
+                                       |> Seq.collect(fun x -> x)
+            let platformsSource = this.Platforms |> Seq.collect(fun x -> x.Cells)
+                                           |> Seq.map(fun x -> x.toMidBottom)
+            let platformsTarget = this.Platforms |> Seq.collect(fun x -> x.Cells)
+                                            |> Seq.map(fun x -> x.toMidTop)
+            let cross = seq { for a in edges |> Seq.append ladders |> Seq.append platformsSource do
+                                for b in this.Grounds
+                                            |> Seq.collect (fun x -> x.Cells) 
+                                            |> Seq.map (fun c -> single c.X + 0.5f,single c.Y + 1.0f)
+                                            |> Seq.append platformsTarget
+                                            |> Seq.append ladders do
+                                            if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
+            cross
+                |> Array.ofSeq
+                |> Array.filter(fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
+                |> Array.choose(fun (a,b) ->
+
+            let trace = Tracing.castRay2 tiles collisionFilter a b
+            let diff = Vector2.Distance(trace, b)
+            match diff with
+                | x when x < 1.0f -> Some(a, trace)
+                | _ -> None)
+
+            
 
 
         member this.Parse tiles =
