@@ -36,6 +36,17 @@ type MyStrategy() =
         //                                            Size = {X = 0.1f; Y = 0.1f}
         //                                            Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
         //                                            }))
+        
+        game.Level.Tiles 
+            |> location.EdgeParse 
+            |> Array.iter (fun edges ->
+                                   let p1, p2 = edges
+                                   debug.draw(CustomData.Line {
+                                       P1 = {X = p1.X; Y = p1.Y}
+                                       P2 = {X = p2.X; Y = p2.Y}
+                                       Width = 0.1f
+                                       Color = {R = 0.0f; G = 0.5f; B =0.5f; A = 0.5f}
+                                       }))
 
         location.Grounds 
             |> Seq.iteri (fun i p ->

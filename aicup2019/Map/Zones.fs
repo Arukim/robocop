@@ -2,6 +2,8 @@
 
 open AiCup2019.Model
 open Robocop.Utils
+open System.Numerics
+open System
 
 module Zones =
     type CellTile = {Cell: Cell; Tile: Tile}
@@ -13,14 +15,18 @@ module Zones =
     type Link<'a> = {Target: 'a; Connection: Connection}
         
 
-    type ZoneGround(cells: seq<Cell>) =
+    type ZoneGround(cells: array<Cell>) =
         member _.Cells = cells
+        member _.TopEdges=
+            let head, tail = cells |> Array.head, cells |> Array.last
+            seq { single (head.X), single (head.Y + 1); (single tail.X) + 1.0f, single (tail.Y + 1)}
 
-    type ZoneLadder(cells: seq<Cell>) =
+    type ZoneLadder(cells: array<Cell>) =
         member _.Cells = cells
         
-    type ZonePlatform(cells: seq<Cell>) =
+    type ZonePlatform(cells: array<Cell>) =
         member _.Cells = cells
+
 
     type Zone = Ground of ZoneGround | Ladder of ZoneLadder | Platform of ZonePlatform
     
@@ -105,6 +111,23 @@ module Zones =
                                     | _ -> false
                 | _ -> false
 
+        member this.EdgeParse (tiles:Tile[][]) =
+            let edges = this.Grounds |> Seq.map(fun x -> x.TopEdges)
+                                     |> Seq.collect(fun x -> x)
+
+            let cross = seq { for a in edges do
+                                for b in edges do
+                                    if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
+
+            cross |> Array.ofSeq |> Array.choose(fun x ->
+                                                        let a, b = x
+                                                        let trace = Tracing.castRay2 tiles a b
+                                                        let diff = Vector2.Distance(trace, b)
+                                                        match diff with
+                                                            | x when x < 1.0f -> Some(a, trace)
+                                                            | _ -> None)
+
+
         member this.Parse tiles =
             if not parsed then
                 let cells = tiles |> Matrices.allTilesG 
@@ -113,17 +136,17 @@ module Zones =
             
                 this.Grounds <- cells |> Seq.filter (fun x -> x.Tile = Tile.Wall)
                                       |> Seq.map (fun x -> x.Cell)
-                                      |> buildGrounds (fun set -> new ZoneGround(set))
+                                      |> buildGrounds (fun set -> new ZoneGround(set |> Array.ofSeq))
                                       |> Array.ofSeq
 
                 this.Ladders <- cells |> Seq.filter (fun x -> x.Tile = Tile.Ladder)
                                       |> Seq.map (fun x -> x.Cell)
-                                      |> buildLadders (fun set -> new ZoneLadder(set))
+                                      |> buildLadders (fun set -> new ZoneLadder(set |> Array.ofSeq))
                                       |> Array.ofSeq
             
                 this.Platforms <- cells |> Seq.filter (fun x -> x.Tile = Tile.Platform)
                                         |> Seq.map (fun x -> x.Cell)
-                                        |> buildPlatforms (fun set -> new ZonePlatform(set))
+                                        |> buildPlatforms (fun set -> new ZonePlatform(set |> Array.ofSeq))
                                         |> Array.ofSeq
                                 
                 let g = this.Grounds |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zone.Ground x))) 
