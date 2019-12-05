@@ -58,10 +58,10 @@ type MyStrategy() =
        
 
         let downJumps = elapsed(fun () -> game.Level.Tiles |> location.EdgeDownGroundParse)
-        printfn "downjumps count %d" (downJumps |> Array.length)
+        printfn "downjumps count %d" (downJumps |> Seq.length)
         
         downJumps
-            |> Array.iter (fun edges ->
+            |> Seq.iter (fun edges ->
                                     let p1, p2 = edges
                                     debug.draw(CustomData.Line {
                                         P1 = {X = p1.X; Y = p1.Y}

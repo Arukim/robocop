@@ -126,9 +126,10 @@ module Zones =
                                                                 match b with Some t -> yield t.toRightTop | None -> ignore()
                                                          }) 
                                      |> Seq.collect(fun x -> x)
+
             let cross = seq { for a in edges do
-                                    for b in edges do
-                                        if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
+                                for b in edges do
+                                    if a <> b then yield a, b }
                                         |> Array.ofSeq
 
             cross
@@ -143,35 +144,35 @@ module Zones =
         member this.EdgeDownGroundParse (tiles:Tile[][]) =
             let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
                                                          seq {
-                                                                match a with Some t -> yield! seq {t.toLeftTopExtra ; t.toLeftBottomExtra;} | None -> ignore()
-                                                                match b with Some t -> yield! seq {t.toRightTopExtra; t.toRightBottomExtra} | None -> ignore()
+                                                                match a with Some t -> yield! seq {t.toLeftTopDelta ; t.toLeftBottomDelta;} | None -> ignore()
+                                                                match b with Some t -> yield! seq {t.toRightTopDelta; t.toRightBottomDelta;} | None -> ignore()
                                                          })                                    
                                      |> Seq.collect(fun x -> x)
             let ladders = this.Ladders |> Seq.collect(fun x -> x.Cells)
-                                       |> Seq.map(fun x -> seq { x.toMidTop; x.toLeftTop; x.toRightMid})
+                                       |> Seq.map(fun x -> seq { x.toMidTopDelta; x.toLeftTop; x.toRightMid})
                                        |> Seq.collect(fun x -> x)
             let platformsSource = this.Platforms |> Seq.collect(fun x -> x.Cells)
                                            |> Seq.map(fun x -> x.toMidBottom)
             let platformsTarget = this.Platforms |> Seq.collect(fun x -> x.Cells)
-                                            |> Seq.map(fun x -> x.toMidTop)
+                                            |> Seq.map(fun x -> x.toMidTopDelta)
+            
             let cross = seq { for a in edges |> Seq.append ladders |> Seq.append platformsSource do
-                                for b in this.Grounds
-                                            |> Seq.collect (fun x -> x.Cells) 
-                                            |> Seq.map (fun c -> single c.X + 0.5f,single c.Y + 1.0f)
-                                            |> Seq.append platformsTarget
-                                            |> Seq.append ladders do
-                                            if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
-            cross
-                |> Array.ofSeq
-                |> Array.filter (fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
-                |> Array.choose (fun (a,b) ->
+                                           for b in this.Grounds
+                                                            |> Seq.collect (fun x -> x.Cells) 
+                                                            |> Seq.map (fun c -> c.toMidTop)
+                                                            |> Seq.append platformsTarget
+                                                            |> Seq.append ladders do                                 
+                                            if a <> b then yield a,b }                                                          
+            cross                
+                |> Seq.filter (fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
+                |> Seq.choose (fun (a,b) ->
                     let trace = Tracing.castRay2 tiles collisionFilter a b
                     let diff = Vector2.Distance(trace, b)
                     match diff with
                         | x when x < 1.0f -> Some(a,trace)
                         | _ -> None)
-                |> Array.groupBy (fun (a,b) -> {| Ax = int a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y|} ) 
-                |> Array.map(fun (_,v) -> v |> Array.head)
+                |> Seq.groupBy (fun (a,b) -> {| Ax = int a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y|} ) 
+                |> Seq.map(fun (_,v) -> v |> Seq.head)
                 
         member this.GroundsAndPlatformsParse (tiles:Tile[][]) =
             let getPoints (cells:seq<Cell>) = 
@@ -185,8 +186,7 @@ module Zones =
             this.Grounds |> Seq.map (fun x -> getPoints x.Cells)
                          |> Seq.append (this.Platforms |> Seq.map(fun x -> getPoints x.Cells))
                          |> Seq.map (fun p -> p 
-                                                |> Seq.choose(fun (f,t) -> 
-                                                    let a, b = Vector2.fromTuple f, Vector2.fromTuple t
+                                                |> Seq.choose(fun (a,b) -> 
                                                     let trace = Tracing.castRay2 tiles collisionFilter a b
                                                     let diff = Vector2.Distance(trace, b)
                                                     match diff with

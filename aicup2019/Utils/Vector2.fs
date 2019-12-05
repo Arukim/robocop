@@ -7,6 +7,7 @@ open System.Numerics
    wrappers to solve this problem.*)
 module Vector2 =
     let inline sub a b = Vector2.Subtract(a, b)
+    let inline add a b = Vector2.Add(a, b)
     let inline mulS (a:single) b = Vector2.Multiply(a, b)
     let inline fromTuple (v:single*single) = Vector2(fst v, snd v)
     let inline dist a b = Vector2.Distance(a, b)
