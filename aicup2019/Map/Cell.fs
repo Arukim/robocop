@@ -21,5 +21,7 @@ type Cell = {X: int; Y: int} with
     member this.toCenter = new Vector2(single this.X + 0.5f, single this.Y + 0.5f)
     member this.toCenterUp = new Vector2(single this.X + 0.5f, single this.Y + 1.5f)
     member this.allEdges = seq {this.toLeftBottom; this.toRightBottom; this.toLeftTop; this.toRightTop }
+    static member fromVector (v:Vector2) =
+        {X=int v.X; Y=int v.Y}
 
 

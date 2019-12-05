@@ -10,7 +10,7 @@ type MyStrategy() =
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
         let returnValue = f()
-        printfn "Elapsed Time: %i ms" timer.ElapsedMilliseconds
+        printf "elapsed Time: %i ms " timer.ElapsedMilliseconds
         returnValue
     static member DistanceSqr (a: Vec2Double, b: Vec2Double) = 
         (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y)
@@ -43,17 +43,18 @@ type MyStrategy() =
         //                                            Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
         //                                            }))
         
-        game.Level.Tiles 
-            |> location.EdgeUpGroundParse 
-            |> Array.iter (fun edges ->
+        let upJumps = elapsed(fun() -> game.Level.Tiles |> location.EdgeUpGroundParse)
+
+        upJumps |> Seq.iter (fun edges ->
                                    let p1, p2 = edges
                                    debug.draw(CustomData.Line {
                                        P1 = {X = p1.X; Y = p1.Y}
                                        P2 = {X = p2.X; Y = p2.Y}
-                                       Width = 0.2f
+                                       Width = 0.05f
                                        Color = {R = 0.0f; G = 0.5f; B =0.0f; A = 1.0f}
                                        }))
-
+                                       
+        printfn "downjumps count %d" (upJumps |> Seq.length)
         
        
 
@@ -67,14 +68,18 @@ type MyStrategy() =
                                         P1 = {X = p1.X; Y = p1.Y}
                                         P2 = {X = p2.X; Y = p2.Y}
                                         Width = 0.05f
-                                        Color = {R = 0.0f; G = 0.0f; B =0.75f; A = 1.0f}
+                                        Color = {R = 0.0f; G = 0.0f; B =0.75f; A = 0.5f}
                                         }))
 
         let groundLines = elapsed(fun () -> game.Level.Tiles 
                                            |> location.GroundsAndPlatformsParse)
         printfn "groundLines count %d" (groundLines |> Seq.length)
 
+
         
+        elapsed(fun () -> game.Level.Tiles |> location.buildPathMap)
+        printfn " for pathMap"
+
         groundLines |> Seq.iter (fun edges ->
                                let p1, p2 = edges
                                debug.draw(CustomData.Line {
