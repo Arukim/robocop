@@ -163,16 +163,41 @@ module Zones =
                                             if a <> b then yield Vector2.fromTuple a,Vector2.fromTuple b }
             cross
                 |> Array.ofSeq
-                |> Array.filter(fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
-                |> Array.choose(fun (a,b) ->
+                |> Array.filter (fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
+                |> Array.choose (fun (a,b) ->
+                    let trace = Tracing.castRay2 tiles collisionFilter a b
+                    let diff = Vector2.Distance(trace, b)
+                    match diff with
+                        | x when x < 1.0f -> Some(a,trace)
+                        | _ -> None)
+                |> Array.groupBy (fun (a,b) -> {| Ax = int a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y|} ) 
+                |> Array.map(fun (_,v) -> v |> Array.head)
+                
+        member this.GroundsAndPlatformsParse (tiles:Tile[][]) =
+            let getPoints (cells:seq<Cell>) = 
+                seq {
+                    let head, tail = cells |> Seq.head, cells |> Seq.last
+                    yield head.toLeftNextMid
+                    yield! (cells |> Seq.map (fun x -> x.toCenterUp))
+                    yield tail.toRightNextMid
+                } |> Seq.pairwise
 
-            let trace = Tracing.castRay2 tiles collisionFilter a b
-            let diff = Vector2.Distance(trace, b)
-            match diff with
-                | x when x < 1.0f -> Some(a, trace)
-                | _ -> None)
-
-            
+            this.Grounds |> Seq.map (fun x -> getPoints x.Cells)
+                         |> Seq.append (this.Platforms |> Seq.map(fun x -> getPoints x.Cells))
+                         |> Seq.map (fun p -> p 
+                                                |> Seq.choose(fun (f,t) -> 
+                                                    let a, b = Vector2.fromTuple f, Vector2.fromTuple t
+                                                    let trace = Tracing.castRay2 tiles collisionFilter a b
+                                                    let diff = Vector2.Distance(trace, b)
+                                                    match diff with
+                                                        | x when x < 1.0f -> Some(a,trace)
+                                                        | _ -> None))                                                
+                         |> Seq.collect(fun x -> x)
+                         |> Seq.groupBy (fun (a,b) -> {| Ax = a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y |} )
+                         |> Seq.map(fun (_,v) -> v |> Seq.head)
+                         //|> Seq.append this.Platforms |> Seq.map(fun x -> getPoints x.Cells) 
+                         //                             |> Seq.collect(fun x -> x)
+                         //|> ()
 
 
         member this.Parse tiles =

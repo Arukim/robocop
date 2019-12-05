@@ -51,11 +51,14 @@ type MyStrategy() =
                                        P1 = {X = p1.X; Y = p1.Y}
                                        P2 = {X = p2.X; Y = p2.Y}
                                        Width = 0.2f
-                                       Color = {R = 0.0f; G = 0.5f; B =0.0f; A = 0.5f}
+                                       Color = {R = 0.0f; G = 0.5f; B =0.0f; A = 1.0f}
                                        }))
 
+        
+       
+
         let downJumps = elapsed(fun () -> game.Level.Tiles |> location.EdgeDownGroundParse)
-        printf "downjumps count %d" (downJumps |> Array.length)
+        printfn "downjumps count %d" (downJumps |> Array.length)
         
         downJumps
             |> Array.iter (fun edges ->
@@ -66,6 +69,21 @@ type MyStrategy() =
                                         Width = 0.05f
                                         Color = {R = 0.0f; G = 0.0f; B =0.75f; A = 1.0f}
                                         }))
+
+        let groundLines = elapsed(fun () -> game.Level.Tiles 
+                                           |> location.GroundsAndPlatformsParse)
+        printfn "groundLines count %d" (groundLines |> Seq.length)
+
+        
+        groundLines |> Seq.iter (fun edges ->
+                               let p1, p2 = edges
+                               debug.draw(CustomData.Line {
+                                   P1 = {X = p1.X; Y = p1.Y}
+                                   P2 = {X = p2.X; Y = p2.Y}
+                                   Width = 0.1f
+                                   Color = {R = 0.0f; G = 0.9f; B = 0.9f; A = 1.0f}
+                                   }))
+                                                                      
 
         location.Grounds 
             |> Seq.iteri (fun i p ->
