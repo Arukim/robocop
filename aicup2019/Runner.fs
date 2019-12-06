@@ -1,9 +1,8 @@
-﻿namespace AiCup2019
+namespace AiCup2019
 
 open System
 open System.IO;
 open System.Net.Sockets;
-open Robocop.Utils
 
 module Runner =
     type T(host, port, token: string) =
@@ -25,20 +24,17 @@ module Runner =
             let rec loop() = 
                 let message = Model.ServerMessageGame.readFrom reader
                 
-                if message.PlayerView.IsSome then
-                    let playerView = message.PlayerView.Value
-
-                    if playerView.Game.CurrentTick = 0 then Dumper.dumpGameMap(playerView.Game)
-
-                    let actions = playerView.Game.Units 
-                                        |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
-                                        |> Array.map(fun x -> 
-                                            (x.Id, myStrategy.getAction(x, playerView.Game, debug))) 
-                                        |> Map.ofArray                                                       
-
-                    (Model.PlayerMessageGame.ActionMessage {Action = actions}).writeTo writer
-                    writer.Flush()
-                loop()
+                match message.PlayerView with
+                    | Some playerView ->
+                        let actions = playerView.Game.Units 
+                                                |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
+                                                |> Array.map(fun x -> 
+                                                    (x.Id, myStrategy.getAction(x, playerView.Game, debug))) 
+                                                |> Map.ofArray                                                       
+                        (Model.PlayerMessageGame.ActionMessage {Action = {Inner = actions}}).writeTo writer
+                        writer.Flush()
+                        loop()
+                    | None -> ()
 
             loop()
 
