@@ -2,6 +2,7 @@
 
 open AiCup2019.Model
 open Robocop.Map
+open Robocop.Utils
 open System
 
 type MyStrategy() =
@@ -130,7 +131,7 @@ type MyStrategy() =
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
         let aim: Vec2Double = match nearestEnemy with
-                                | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y} 
+                                | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
                                 | None -> { X = 0.0; Y = 0.0 }
 
         let mutable jump = targetPos.Y > unit.Position.Y
@@ -138,14 +139,18 @@ type MyStrategy() =
         if targetPos.X > unit.Position.X && game.Level.Tiles.[(int unit.Position.X + 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
         if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true        
         
-        let checkGrenadeSafety (pos:Vec2Double) (aim:Vec2Double) tiles =
-            let dist = Tracing.castRay tiles ((single pos.X),(single pos.Y)) ((single aim.X),(single aim.Y)) |> Seq.length
-            debug.draw(CustomData.Log {Text = sprintf "Dist is: %A" dist })
-            printf "Dist is: %A\n" dist
-            dist > 3
+        let checkGrenadeSafety (pos:Vec2Double) (enemy: Option<Unit>) tiles =
+            match enemy with
+                | Some x -> let vFrom, vTo =  Vector2.fromTuple ((single pos.X),(single pos.Y)), Vector2.fromTuple (single x.Position.X, single x.Position.Y)
+                            let dist = Tracing.castRay tiles ((single pos.X + 0.5f),(single pos.Y + 1.0f)) ((single aim.X + 0.5f),(single aim.Y + 1.0f)) |> Seq.length
+                            let enemyDist = int (Vector2.dist vFrom vTo)
+                            debug.draw(CustomData.Log {Text = sprintf "RL: enemy %A fire %A" enemyDist dist })
+                            (enemyDist - dist) < 3
+                | None -> false
+            
 
         let shoot = match unit.Weapon with
-                        | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position aim game.Level.Tiles
+                        | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position nearestEnemy game.Level.Tiles
                         | _ -> true
 
         let maxVel curr tgt =
