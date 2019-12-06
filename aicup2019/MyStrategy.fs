@@ -18,6 +18,11 @@ type MyStrategy() =
     static member DistanceSqr (a: Vec2Double, b: Vec2Double) = 
         (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y)
 
+    static member WeaponPreference (t: WeaponType) =
+        match t with
+            | WeaponType.RocketLauncher -> 0.0
+            | _ -> 100.0
+
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
         
@@ -28,9 +33,9 @@ type MyStrategy() =
                                         |> Seq.tryFind(fun _ -> true)
 
         let nearestWeapon = game.LootBoxes |> Array.choose(fun b -> match b.Item with
-                                                                        | Item.Weapon _ -> Some b.Position
+                                                                        | Item.Weapon x -> Some(b.Position, x.WeaponType)
                                                                         | _ -> None)
-                                            |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
+                                            |> Array.sortBy(fun (pos,t) -> MyStrategy.DistanceSqr(pos, unit.Position) - MyStrategy.WeaponPreference(t))
                                             |> Seq.tryFind(fun _ -> true)
         
         let nearestHealthPack = game.LootBoxes |> Array.choose(fun b -> match b.Item with
@@ -122,8 +127,8 @@ type MyStrategy() =
         let mutable targetPos = unit.Position
 
         if not unit.Weapon.IsSome && nearestWeapon.IsSome then
-            targetPos <- nearestWeapon.Value
-        else if unit.Health < 90 && nearestHealthPack.IsSome then
+            targetPos <- fst nearestWeapon.Value
+        else if unit.Health < 80 && nearestHealthPack.IsSome then
             targetPos <- nearestHealthPack.Value
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position

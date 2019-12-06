@@ -40,8 +40,7 @@ module Tracing =
                     pos
                 else trace tiles inc vTo newPos
 
-           let tail = trace tiles inc finish start            
-           tail
+           trace tiles inc finish start            
 
     let buildTraceMap (game: Game) start =
         game.Level.Tiles 
@@ -50,4 +49,17 @@ module Tracing =
             |> Seq.map(fun x -> castRay game.Level.Tiles start x)
             |> Seq.concat
             |> Seq.distinct
+
+    let traceHitFrame (tiles:Tile[][]) (from:Vec2Double) (target:Vec2Double) =
+        let collisionFilterJump cell = Tile.Wall
+        let vFrom = new Vector2(single from.X + 0.5f, single from.Y + 1.0f)
+        let vTargets = seq {
+            let x,y = single target.X, single target.Y
+            for i = 0 to 9 do yield new Vector2(x, y + i*0.2f)
+            for i = 0 to 4 do yield new Vector2(x + i*0.2f, y + 2.0f)
+            for i = 0 to 9 do yield new Vector2(x + 1.0f, y + 2.0f - i*0.2f)
+            for i = 0 to 4 do yield new Vector2(x + 1.0f - i*0.2f, y)
+        }
+
+        let traces = vTargets |> Seq.map(fun target -> castRay2 tiles vFrom target)
 
