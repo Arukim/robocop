@@ -27,7 +27,7 @@ type MyStrategy() =
                                         |> Seq.tryFind(fun _ -> true)
 
         let nearestWeapon = game.LootBoxes |> Array.choose(fun b -> match b.Item with
-                                                                        | Item.WeaponItem _ -> Some b.Position
+                                                                        | Item.Weapon _ -> Some b.Position
                                                                         | _ -> None)
                                             |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                             |> Seq.tryFind(fun _ -> true)
@@ -161,4 +161,5 @@ type MyStrategy() =
             Shoot = shoot
             SwapWeapon = false
             PlantMine = false
+            Reload = false
         }          
