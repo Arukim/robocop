@@ -11,4 +11,7 @@ module Vector2 =
     let inline mulS (a:single) b = Vector2.Multiply(a, b)
     let inline fromTuple (v:single*single) = Vector2(fst v, snd v)
     let inline dist a b = Vector2.Distance(a, b)
+    let inline crossNorm (a:Vector2) (b: Vector2) = 
+        let q = (a - b)
+        Vector2.Normalize(new Vector2(q.Y, -q.X))
 

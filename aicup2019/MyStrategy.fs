@@ -3,6 +3,7 @@
 open AiCup2019.Model
 open Robocop.Map
 open Robocop.Utils
+open System.Numerics
 open System
 
 type MyStrategy() =
@@ -25,8 +26,10 @@ type MyStrategy() =
 
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
+        let tiles = game.Level.Tiles
+        let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
         
-        elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))       
+       //elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))       
 
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
                                         |> Array.sortBy(fun u -> MyStrategy.DistanceSqr(u.Position, unit.Position))
@@ -43,6 +46,16 @@ type MyStrategy() =
                                                                         | _ -> None)
                                                 |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                                 |> Seq.tryFind(fun _ -> true)
+
+        
+        let hitFrame = match nearestEnemy with
+                            | Some x -> Tracing.traceHitFrame tiles unit.Position x.Position
+                            | _ -> None
+        
+        let color = {R =  0.0f; G = (200.0f)/ 255.0f; B = 0.0f; A = 0.25f}
+
+        
+
 
         //Tracing.buildTraceMap game (single (unit.Position.X),single (unit.Position.Y))
         //    |> Seq.iter(fun cell -> debug.draw(CustomData.Rect {
@@ -85,44 +98,44 @@ type MyStrategy() =
 
 
         
-        elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
+        //elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
 
-        //groundLines |> Seq.iter (fun edges ->
-        //                       let p1, p2 = edges
-        //                       debug.draw(CustomData.Line {
-        //                           P1 = {X = p1.X; Y = p1.Y}
-        //                           P2 = {X = p2.X; Y = p2.Y}
-        //                           Width = 0.1f
-        //                           Color = {R = 0.0f; G = 0.9f; B = 0.9f; A = 1.0f}
-        //                           }))
+        ////groundLines |> Seq.iter (fun edges ->
+        ////                       let p1, p2 = edges
+        ////                       debug.draw(CustomData.Line {
+        ////                           P1 = {X = p1.X; Y = p1.Y}
+        ////                           P2 = {X = p2.X; Y = p2.Y}
+        ////                           Width = 0.1f
+        ////                           Color = {R = 0.0f; G = 0.9f; B = 0.9f; A = 1.0f}
+        ////                           }))
                                                                       
 
-        location.Grounds 
-            |> Seq.iteri (fun i p ->
-                                    let cell = p.Cells |> Seq.head
-                                    debug.draw(CustomData.Rect {
-                                        Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
-                                        Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
-                                        Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
-                                        }))
+        //location.Grounds 
+        //    |> Seq.iteri (fun i p ->
+        //                            let cell = p.Cells |> Seq.head
+        //                            debug.draw(CustomData.Rect {
+        //                                Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
+        //                                Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
+        //                                Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = (100.0f)/ 255.0f; B = 0.0f; A = 1.0f}
+        //                                }))
 
-        location.Ladders 
-            |> Seq.iteri (fun i p ->
-                                    let cell = p.Cells |> Seq.head
-                                    debug.draw(CustomData.Rect {
-                                        Pos = {X = (single cell.X)  + 0.5f; Y = (single cell.Y)}
-                                        Size = {X = 0.25f; Y = single (p.Cells |> Seq.length)}
-                                        Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f)/ 255.0f; A = 1.0f}
-                                        }))
+        //location.Ladders 
+        //    |> Seq.iteri (fun i p ->
+        //                            let cell = p.Cells |> Seq.head
+        //                            debug.draw(CustomData.Rect {
+        //                                Pos = {X = (single cell.X)  + 0.5f; Y = (single cell.Y)}
+        //                                Size = {X = 0.25f; Y = single (p.Cells |> Seq.length)}
+        //                                Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f)/ 255.0f; A = 1.0f}
+        //                                }))
 
-        location.Platforms 
-                  |> Seq.iteri (fun i p ->
-                                          let cell = p.Cells |> Seq.head
-                                          debug.draw(CustomData.Rect {
-                                              Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
-                                              Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
-                                              Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f + single (25 * i)); A = 1.0f}
-                                              }))
+        //location.Platforms 
+        //          |> Seq.iteri (fun i p ->
+        //                                  let cell = p.Cells |> Seq.head
+        //                                  debug.draw(CustomData.Rect {
+        //                                      Pos = {X = (single cell.X); Y = (single cell.Y) + 0.5f}
+        //                                      Size = {X = single (p.Cells |> Seq.length); Y = 0.25f}
+        //                                      Color = {R = (100.0f + single (25 * i))/ 255.0f ; G = 0.0f; B = (100.0f + single (25 * i)); A = 1.0f}
+        //                                      }))
 
         let mutable targetPos = unit.Position
 
@@ -135,9 +148,29 @@ type MyStrategy() =
 
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
-        let aim: Vec2Double = match nearestEnemy with
-                                | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
-                                | None -> { X = 0.0; Y = 0.0 }
+        let mutable aim: Vec2Double = match nearestEnemy with
+                                        | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
+                                        | None -> { X = 0.0; Y = 0.0 }
+
+        match hitFrame with
+        | Some (head,last) ->
+                    aim <- {X= double ((head.X + last.X)/2.0f)- unit.Position.X; Y = double ((head.Y + last.Y)/2.0f)- unit.Position.Y - 1.0;}
+                    debug.draw(CustomData.Polygon {
+                                                    Vertices = [|
+                                                        {
+                                                            Position = {X = single unit.Position.X; Y = single unit.Position.Y + 1.0f}
+                                                            Color = color
+                                                        };
+                                                        {
+                                                            Position = {X = head.X; Y = head.Y}
+                                                            Color = color
+                                                        };
+                                                        {
+                                                            Position = {X = last.X; Y = last.Y}
+                                                            Color = color
+                                                        };
+                                                    |]})
+        | None -> ignore()
 
         let mutable jump = targetPos.Y > unit.Position.Y
 
@@ -148,15 +181,31 @@ type MyStrategy() =
             match enemy with
                 | Some x -> let vFrom, vTo =  Vector2.fromTuple ((single pos.X),(single pos.Y)), Vector2.fromTuple (single x.Position.X, single x.Position.Y)
                             let dist = Tracing.castRay tiles ((single pos.X + 0.5f),(single pos.Y + 1.0f)) ((single aim.X + 0.5f),(single aim.Y + 1.0f)) |> Seq.length
-                            let enemyDist = int (Vector2.dist vFrom vTo)
+                            let enemyDist = Vector2.dist vFrom vTo
                             debug.draw(CustomData.Log {Text = sprintf "RL: enemy %A fire %A" enemyDist dist })
-                            (enemyDist - dist) < 3
+                            (int enemyDist - dist) < 3
                 | None -> false
-            
+        
+        let enemyDist = match nearestEnemy with
+                        | Some x -> 
+                            Vector2.dist (new Vector2(single x.Position.X, single x.Position.Y)) myPos
+                        | _ -> infinityf
+
+        let checkBulletWeapon hit (w:Weapon) =   
+            match hitFrame with
+                | Some (head,last) -> let hitFrame = Vector2.dist head last                                      
+                                      let spread = single (tan(w.Spread / 2.0)) * enemyDist * 2.0f
+                                      let fire = hitFrame / spread > hit 
+                                      //printfn "HitFrame %A Spread %A Fire: %A" hitFrame spread fire
+                                      fire
+                                                                             
+                | _ -> false
 
         let shoot = match unit.Weapon with
                         | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position nearestEnemy game.Level.Tiles
-                        | _ -> true
+                        | Some x when x.Typ = WeaponType.Pistol -> x.FireTimer.IsNone && (enemyDist < 2.1f || checkBulletWeapon 0.80f x)
+                        | Some x when x.Typ = WeaponType.AssaultRifle -> x.FireTimer.IsNone && enemyDist < 5.5f && checkBulletWeapon 0.75f x || enemyDist < 2.1f
+                        | _ -> false
 
         let maxVel curr tgt =
             if tgt > curr then 10.0 else -10.0

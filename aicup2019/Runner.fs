@@ -20,6 +20,7 @@ module Runner =
         member this.run =
             let myStrategy = new MyStrategy()
             let debug = new Debug(writer)
+            Robocop.Utils.Logger.Debug <- Some debug
 
             let rec loop() = 
                 let message = Model.ServerMessageGame.readFrom reader
