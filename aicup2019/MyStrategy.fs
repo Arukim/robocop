@@ -7,7 +7,7 @@ open System.Numerics
 open System
 
 type MyStrategy() =
-    let location: Zones.Location = new Zones.Location();
+    let location: Location = new Location();
     let elapsed msg f = 
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
@@ -28,8 +28,7 @@ type MyStrategy() =
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
         let tiles = game.Level.Tiles
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
-        
-       //elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))       
+             
 
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
                                         |> Array.sortBy(fun u -> MyStrategy.DistanceSqr(u.Position, unit.Position))
@@ -98,7 +97,9 @@ type MyStrategy() =
 
 
         
-        //elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
+        elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
+        elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
+        elapsed "Dijkstra" (fun () -> Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position) |> ignore)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges

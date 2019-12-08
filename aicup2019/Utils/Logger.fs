@@ -8,11 +8,26 @@ type Logger() =
     static let mutable debug : Option<Debug> = None    
     static member Debug with set(v) = debug <- v
     
-    static member drawDot (cell:Vector2) =
+    static member drawDot (cell:Vector2) color =
         match debug with
             | Some x -> x.draw(CustomData.Rect {
                                         Pos = {X = cell.X - 0.05f; Y = cell.Y - 0.05f}
                                         Size = {X = 0.1f; Y = 0.1f}
-                                        Color = {R = 0.0f; G = 200.0f; B = 0.0f; A = 255.0f}
+                                        Color = ColorSingle.from color
                                         })
             | _ -> ignore()
+    
+    static member drawLine (source:Vector2) (target:Vector2) color =
+        match debug with
+        | Some x -> x.draw(CustomData.Line {
+                                    P1 = {X = source.X; Y = source.Y}
+                                    P2 = {X = target.X; Y = target.Y}
+                                    Width = 0.05f
+                                    Color = ColorSingle.from color
+                                    })
+        | _ -> ignore()
+
+    
+    
+    static member drawDotD (dot:Vector2) = Logger.drawDot dot Palette.LimeGreen
+    static member drawLineD (source:Vector2) (target:Vector2) = Logger.drawLine source target Palette.LimeGreen

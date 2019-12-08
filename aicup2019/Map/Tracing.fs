@@ -85,9 +85,9 @@ module Tracing =
                               |> Array.map(fun x -> Geom.closestPointToLine a b x)
                               |> Array.ofSeq        
         
-        traces |> Seq.iter(Logger.drawDot)
+        traces |> Seq.iter(fun x -> Logger.drawDot x Palette.OrangeRed)
 
-        Logger.drawDot vFrom
+        Logger.drawDotD vFrom
 
         let cross = seq { for a in traces do
                            for b in traces do 
