@@ -45,8 +45,8 @@ type Location() =
                                                                     match b with Some t -> yield! seq {t.up.toCenter } | None -> ignore()
                                                             })
                                                |> Seq.append (this.Platforms 
-                                                                |> Seq.collect(fun x -> x.Standable(tiles)) 
-                                                                |> Seq.map(fun x -> seq { x.toCenter}))
+                                                                |> Seq.collect(fun x -> x.Cells) 
+                                                                |> Seq.map(fun x -> seq { x.up.toCenter}))
                                     |> Seq.collect(fun x -> x)
            
            //toGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.OrangeRed)

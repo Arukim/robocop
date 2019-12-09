@@ -12,9 +12,9 @@ type ZoneGround(cells: array<Cell>) =
     member _.Cells = cells
     member _.Standable (tiles:Tile[][]) =  
         seq { 
-                yield! (cells |> Seq.map(fun x -> x.up))
                 let head, tail = (cells |> Array.head).up.left, (cells |> Array.last).right.up
                 match tiles.[head.X].[head.Y] with Tile.Empty -> yield head; | _ -> ignore()
+                yield! (cells |> Seq.map(fun x -> x.up))
                 match tiles.[tail.X].[tail.Y] with Tile.Empty -> yield tail; | _ -> ignore()
             }
     member _.EdgeCells (tiles:Tile[][]) = 
@@ -36,9 +36,9 @@ type ZonePlatform(cells: array<Cell>) =
     
     member _.Standable (tiles:Tile[][]) =  
         seq { 
-                yield! (cells |> Seq.map(fun x -> x.up))
                 let head, tail = (cells |> Array.head).up.left, (cells |> Array.last).right.up
                 match tiles.[head.X].[head.Y] with Tile.Empty -> yield head; | _ -> ignore()
+                yield! (cells |> Seq.map(fun x -> x.up))
                 match tiles.[tail.X].[tail.Y] with Tile.Empty -> yield tail; | _ -> ignore()
             }
 

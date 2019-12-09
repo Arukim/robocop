@@ -3,6 +3,7 @@
 open AiCup2019.Model
 open Robocop.Map
 open Robocop.Utils
+open Robocop.Player
 open System.Numerics
 open System
 
@@ -13,7 +14,7 @@ type MyStrategy() =
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
         let returnValue = f()
-#if !DEBUG
+#if DEBUG
         printfn "%s elapsed Time: %i ms " msg timer.ElapsedMilliseconds
 #endif
         returnValue
@@ -101,16 +102,18 @@ type MyStrategy() =
         
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
         elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
-        elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
-                                        match newPath |> Seq.isEmpty with
-                                        | false -> pathfind <- newPath
-                                        | _ -> ignore())
+        
+        if unit.OnGround then
+            elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
+                                            match newPath |> Seq.isEmpty with
+                                            | false -> pathfind <- newPath
+                                            | _ -> ignore())
 
         
         
                             
                             
-        pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
+        ///pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges
@@ -158,7 +161,8 @@ type MyStrategy() =
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
 
-        let path = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos)
+        targetPos <- {X=15.0;Y=26.0}
+        let path = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Array.ofSeq
         path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.HotPink)
 
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
@@ -187,10 +191,10 @@ type MyStrategy() =
                                                     |]})
         | None -> ignore()
 
-        let mutable jump = targetPos.Y > unit.Position.Y
+        //let mutable jump = targetPos.Y > unit.Position.Y
 
-        if targetPos.X > unit.Position.X && game.Level.Tiles.[(int unit.Position.X + 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
-        if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true        
+        //if targetPos.X > unit.Position.X && game.Level.Tiles.[(int unit.Position.X + 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true
+        //if targetPos.X < unit.Position.X && game.Level.Tiles.[(int unit.Position.X - 1)].[(int unit.Position.Y)] = Tile.Wall then jump <- true        
         
         let checkGrenadeSafety (pos:Vec2Double) (enemy: Option<Unit>) tiles =
             match enemy with
@@ -222,15 +226,22 @@ type MyStrategy() =
                         | Some x when x.Typ = WeaponType.AssaultRifle -> x.FireTimer.IsNone && enemyDist < 5.5f && checkBulletWeapon 0.75f x || enemyDist < 2.1f
                         | _ -> false
 
-        let maxVel curr tgt =
-            if tgt > curr then 10.0 else -10.0
+        //let maxVel curr tgt =
+        //    if tgt > curr then 10.0 else -10.0
 
-        let velocity = if (unit.Position.Y - targetPos.Y) >= -0.5 then maxVel unit.Position.X targetPos.X else targetPos.X - unit.Position.X
+        //let velocity = if (unit.Position.Y - targetPos.Y) >= -0.5 then maxVel unit.Position.X targetPos.X else targetPos.X - unit.Position.X
+
+        let nextTile = match path.Length with
+                        | 1 -> path |> Seq.head
+                        | x when x > 0 -> path |> Seq.rev |> Seq.skip 1 |> Seq.head
+                        | _ -> myCell
+
+        let (jump, jumpDown, velocity) = Controller.makeMove unit myPos nextTile
 
         {
             Velocity = velocity
             Jump = jump
-            JumpDown = not jump
+            JumpDown = jumpDown
             Aim = aim
             Shoot = shoot
             SwapWeapon = false

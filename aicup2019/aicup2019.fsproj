@@ -49,6 +49,7 @@
     <Compile Include="Map\Zones.fs" />
     <Compile Include="Map\Location.fs" />
     <Compile Include="Map\Pathfinder.fs" />
+    <Compile Include="Player\Controller.fs" />
     <Compile Include="MyStrategy.fs" />
     <Compile Include="Runner.fs" />
   </ItemGroup>
