@@ -69,8 +69,12 @@ type Location() =
        member this.EdgeDownGroundParse (tiles:Tile[][]) =
            let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
                                                         seq {
-                                                               match a with Some t -> yield t.up.left.toCenter; | None -> ignore()
-                                                               match b with Some t -> yield t.up.right.toCenter; | None -> ignore()
+                                                               match a with Some t -> 
+                                                                                yield t.left.left.toCenter;
+                                                                                yield t.up.left.toCenter; | None -> ignore()
+                                                               match b with Some t ->                                                                
+                                                                                yield t.up.right.toCenter;
+                                                                                yield t.right.right.toCenter;| None -> ignore()
                                                         })                                    
                                     |> Seq.collect(fun x -> x)
            let laddersFrom = this.Ladders |> Seq.collect(fun x -> x.Standable)

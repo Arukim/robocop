@@ -49,6 +49,12 @@ type MyStrategy() =
                                                 |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
                                                 |> Seq.tryFind(fun _ -> true)
 
+        let nearestMine = game.LootBoxes |> Array.choose(fun b -> match b.Item with
+                                                                                | Item.Mine _ -> Some b.Position
+                                                                                | _ -> None)
+                                                        |> Array.sortBy(fun p -> MyStrategy.DistanceSqr(p, unit.Position))
+                                                        |> Seq.tryFind(fun _ -> true)
+
         
         let hitFrame = match nearestEnemy with
                             | Some x -> Tracing.traceHitFrame tiles unit.Position x.Position
@@ -154,14 +160,15 @@ type MyStrategy() =
 
         let mutable targetPos = unit.Position
 
-        if not unit.Weapon.IsSome && nearestWeapon.IsSome then
-            targetPos <- fst nearestWeapon.Value
-        else if unit.Health < 80 && nearestHealthPack.IsSome then
-            targetPos <- nearestHealthPack.Value
-        else if nearestEnemy.IsSome then
-            targetPos <- nearestEnemy.Value.Position
+        //if not unit.Weapon.IsSome && nearestWeapon.IsSome then
+        if nearestMine.IsSome then
+            targetPos <- nearestMine.Value
+        //else if unit.Health < 80 && nearestHealthPack.IsSome then
+        //    targetPos <- nearestHealthPack.Value
+        //else if nearestEnemy.IsSome then
+        //    targetPos <- nearestEnemy.Value.Position
 
-        targetPos <- {X=15.0;Y=26.0}
+        //targetPos <- {X=15.0;Y=26.0}
         let path = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Array.ofSeq
         path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.HotPink)
 
