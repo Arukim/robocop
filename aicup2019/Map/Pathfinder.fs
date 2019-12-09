@@ -34,4 +34,15 @@ module Pathfinder =
         prev |> Seq.choose (fun kv -> match kv.Value with
                                         | Some v -> Some (kv.Key, v)
                                         | _ -> None)
+             |> Map.ofSeq
+
+    let findPath (graph: Map<Cell,Cell>) source target =
+        let u = ref target
+        seq {
+            if graph.ContainsKey(u.contents) || u.contents = source then
+                let mutable go = true
+                while go do
+                    yield u.contents
+                    go <- graph.TryGetValue(u.contents, u)
+        }
 

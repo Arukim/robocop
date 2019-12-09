@@ -8,12 +8,12 @@ open System
 
 type MyStrategy() =
     let location: Location = new Location();
-    let mutable pathfind: seq<Cell*Cell> = Seq.empty
+    let mutable pathfind: Map<Cell,Cell> = Map.empty
     let elapsed msg f = 
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
         let returnValue = f()
-#if DEBUG
+#if !DEBUG
         printfn "%s elapsed Time: %i ms " msg timer.ElapsedMilliseconds
 #endif
         returnValue
@@ -29,6 +29,7 @@ type MyStrategy() =
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
         let tiles = game.Level.Tiles
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
+        let myCell = Cell.fromVector unit.Position
              
 
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
@@ -100,8 +101,8 @@ type MyStrategy() =
         
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
         elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
-        elapsed "Dijkstra" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
-                                      match newPath |> Seq.isEmpty with
+        elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
+                                        match newPath |> Seq.isEmpty with
                                         | false -> pathfind <- newPath
                                         | _ -> ignore())
 
@@ -109,7 +110,7 @@ type MyStrategy() =
         
                             
                             
-        pathfind |> Seq.iter (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.Lime)
+        pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges
@@ -156,6 +157,9 @@ type MyStrategy() =
             targetPos <- nearestHealthPack.Value
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
+
+        let path = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos)
+        path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.HotPink)
 
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
