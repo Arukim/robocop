@@ -8,6 +8,7 @@ open System
 
 type MyStrategy() =
     let location: Location = new Location();
+    let mutable pathfind: seq<Cell*Cell> = Seq.empty
     let elapsed msg f = 
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
@@ -99,7 +100,16 @@ type MyStrategy() =
         
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
         elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
-        elapsed "Dijkstra" (fun () -> Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position) |> ignore)
+        elapsed "Dijkstra" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
+                                      match newPath |> Seq.isEmpty with
+                                        | false -> pathfind <- newPath
+                                        | _ -> ignore())
+
+        
+        
+                            
+                            
+        pathfind |> Seq.iter (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.Lime)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges

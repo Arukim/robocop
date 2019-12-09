@@ -30,9 +30,8 @@ module Pathfinder =
                 if alt < dist.GetValueOrDefault(link.Target, infinityf) then
                     dist.[link.Target] <- alt
                     prev.[link.Target] <- Some u.Key
-        
-        prev |> Seq.iter (fun kv -> match kv.Value with
-                                    | Some v -> Logger.drawLine kv.Key.toCenter v.toCenter Palette.Lime
-                                    | _ -> ignore())
-        prev
+
+        prev |> Seq.choose (fun kv -> match kv.Value with
+                                        | Some v -> Some (kv.Key, v)
+                                        | _ -> None)
 

@@ -26,18 +26,18 @@ type Location() =
 
        member this.EdgeUpGroundParse (tiles:Tile[][]) =        
            let fromGrounds = this.Grounds |> Seq.collect(fun x -> x.Standable(tiles))
-                                          |> Seq.append (this.Platforms |> Seq.collect(fun x -> x.Cells))
+                                          |> Seq.append (this.Platforms |> Seq.collect(fun x -> x.Standable(tiles)))
                                     |> Seq.map(fun x -> seq { x.toCenter})
                                     |> Seq.collect(fun x -> x)
 
-           fromGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.Yellow)                       
+           //fromGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.Yellow)                       
            
            let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable)
-                                          |> Seq.map(fun x -> seq { x.toMidTopDelta; x.toLeftMid; x.toRightMidDelta})
+                                          |> Seq.map(fun x -> seq { x.toCenter})
                                           |> Seq.collect(fun x -> x)
 
             
-           ladders |> Seq.iter (fun p -> Logger.drawDot p Palette.AliceBlue)
+           //ladders |> Seq.iter (fun p -> Logger.drawDot p Palette.AliceBlue)
 
            let toGrounds = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
                                                             seq {
@@ -49,7 +49,7 @@ type Location() =
                                                                 |> Seq.map(fun x -> seq { x.toCenter}))
                                     |> Seq.collect(fun x -> x)
            
-           toGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.OrangeRed)
+           //toGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.OrangeRed)
 
            let cross = seq { for a in fromGrounds |> Seq.append ladders do
                                for b in toGrounds |> Seq.append ladders do
@@ -69,24 +69,28 @@ type Location() =
        member this.EdgeDownGroundParse (tiles:Tile[][]) =
            let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
                                                         seq {
-                                                               match a with Some t -> yield! seq {t.toLeftTopDelta ; t.toLeftBottomDelta;} | None -> ignore()
-                                                               match b with Some t -> yield! seq {t.toRightTopDelta; t.toRightBottomDelta;} | None -> ignore()
+                                                               match a with Some t -> yield t.up.left.toCenter; | None -> ignore()
+                                                               match b with Some t -> yield t.up.right.toCenter; | None -> ignore()
                                                         })                                    
                                     |> Seq.collect(fun x -> x)
-           let ladders = this.Ladders |> Seq.collect(fun x -> x.Cells)
-                                      |> Seq.map(fun x -> seq { x.toMidTopDelta; x.toLeftTop; x.toRightMid})
+           let laddersFrom = this.Ladders |> Seq.collect(fun x -> x.Standable)
+                                      |> Seq.map(fun x -> seq { x.toRightMidDelta; x.toLeftMid})
                                       |> Seq.collect(fun x -> x)
+           
+           let laddersTo = this.Ladders |> Seq.collect(fun x -> x.Standable)
+                                      |> Seq.map(fun x -> x.toCenter)
+
            let platformsSource = this.Platforms |> Seq.collect(fun x -> x.Cells)
-                                          |> Seq.map(fun x -> x.toMidBottom)
-           let platformsTarget = this.Platforms |> Seq.collect(fun x -> x.Cells)
+                                          |> Seq.map(fun x -> x.down.toCenter)
+           let platformsTarget = this.Platforms |> Seq.collect(fun x -> x.Standable(tiles))
                                            |> Seq.map(fun x -> x.toMidTopDelta)
            
-           let cross = seq { for a in edges |> Seq.append ladders |> Seq.append platformsSource do
+           let cross = seq { for a in edges |> Seq.append laddersFrom |> Seq.append platformsSource do
                                           for b in this.Grounds
                                                            |> Seq.collect (fun x -> x.Cells) 
                                                            |> Seq.map (fun c -> c.toMidTop)
                                                            |> Seq.append platformsTarget
-                                                           |> Seq.append ladders do                                 
+                                                           |> Seq.append laddersTo do                                 
                                            if a <> b then yield a,b }                                                          
            cross                
                |> Seq.filter (fun (a,b) -> a.Y > b.Y && a.Y - b.Y > Math.Abs(b.X - a.X))
@@ -98,6 +102,9 @@ type Location() =
                        | _ -> None)
                |> Seq.groupBy (fun (a,b) -> {| Ax = int a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y|} ) 
                |> Seq.map(fun (_,v) -> v |> Seq.head)
+               |> Seq.append(this.Platforms 
+                                |> Seq.collect(fun x -> x.Cells)
+                                |> Seq.map (fun c -> (c.up.toCenter, c.toCenter)))
                
        member this.GroundsAndPlatformsParse (tiles:Tile[][]) =
            this.Grounds |> Seq.map (fun x -> (x.Standable(tiles) |> Seq.map (fun x -> x.toCenter) |> Seq.pairwise))
@@ -118,17 +125,17 @@ type Location() =
            let pathsDown = tiles |> this.EdgeDownGroundParse
            let pathsGround = tiles |> this.GroundsAndPlatformsParse
 
-           pathsUp |> Seq.iter (fun edges ->
-               let p1, p2 = edges
-               Logger.drawLine p1 p2 Palette.LightSeaGreen)
+           //pathsUp |> Seq.iter (fun edges ->
+           //    let p1, p2 = edges
+           //    Logger.drawLine p1 p2 Palette.LightSeaGreen)
 
            //pathsDown |> Seq.iter (fun edges ->
            //              let p1, p2 = edges
            //              Logger.drawLine p1 p2 Palette.DarkSlateBlue)
 
-           pathsGround |> Seq.iter (fun edges ->
-                           let p1, p2 = edges
-                           Logger.drawLine p1 p2 Palette.CornflowerBlue)
+           //pathsGround |> Seq.iter (fun edges ->
+           //                let p1, p2 = edges
+           //                Logger.drawLine p1 p2 Palette.CornflowerBlue)
        
            this.PathMap <- pathsUp |> Seq.map(fun (a,b) -> 
                                                    Cell.fromVector a,
