@@ -37,9 +37,9 @@ type ZonePlatform(cells: array<Cell>) =
     member _.Standable (tiles:Tile[][]) =  
         seq { 
                 let head, tail = (cells |> Array.head).up.left, (cells |> Array.last).right.up
-                match tiles.[head.X].[head.Y] with Tile.Empty -> yield head; | _ -> ignore()
+                match tiles.[head.X].[head.Y] with | x  when x = Tile.Empty || x = Tile.Ladder -> yield head; | _ -> ignore()
                 yield! (cells |> Seq.map(fun x -> x.up))
-                match tiles.[tail.X].[tail.Y] with Tile.Empty -> yield tail; | _ -> ignore()
+                match tiles.[tail.X].[tail.Y] with | x when x = Tile.Empty || x = Tile.Ladder -> yield tail; | _ -> ignore()
             }
 
 module Zones =

@@ -12,6 +12,8 @@ type Location() =
            cell = Tile.Wall || cell = Tile.Ladder || cell = Tile.Platform        
        let collisionFilterJump cell =
            cell = Tile.Wall
+       let collisionFilterGrounds cell =
+           cell = Tile.Wall || cell = Tile.Platform    
        
        let grounds = Array.empty<ZoneGround>
        let ladders = Array.empty<ZoneLadder>
@@ -115,7 +117,7 @@ type Location() =
                         |> Seq.append (this.Platforms |> Seq.map(fun x -> x.Standable(tiles) |> Seq.map (fun x -> x.toCenter) |> Seq.pairwise))
                         |> Seq.map (fun p -> p 
                                                |> Seq.choose(fun (a,b) -> 
-                                                   let trace = Tracing.castRay2 tiles collisionFilterFall a b
+                                                   let trace = Tracing.castRay2 tiles collisionFilterGrounds a b
                                                    let diff = Vector2.Distance(trace, b)
                                                    match diff with
                                                        | x when x < 1.0f -> Some(a,trace)
@@ -137,9 +139,9 @@ type Location() =
            //              let p1, p2 = edges
            //              Logger.drawLine p1 p2 Palette.DarkSlateBlue)
 
-           //pathsGround |> Seq.iter (fun edges ->
-           //                let p1, p2 = edges
-           //                Logger.drawLine p1 p2 Palette.CornflowerBlue)
+           pathsGround |> Seq.iter (fun edges ->
+                           let p1, p2 = edges
+                           Logger.drawLine p1 p2 Palette.CornflowerBlue)
        
            this.PathMap <- pathsUp |> Seq.map(fun (a,b) -> 
                                                    Cell.fromVector a,

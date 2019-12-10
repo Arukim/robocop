@@ -11,7 +11,10 @@ module Controller =
 
         let checkJump =
             match unit.OnLadder with
-                | true -> (target.Y > source.Y, target.Y < source.Y)
+                | true -> match target.Y - source.Y with
+                            | x when x > 0.1f -> (true,false)
+                            | x when x < 0.1f -> (false, true)
+                            | _ -> (false, false)
                 | false -> match unit.OnGround with
                                 | true -> (target.Y - source.Y > 0.5f,target.Y - source.Y < -2.0f)
                                 | false -> (target.Y - source.Y > -1.0f && unit.JumpState.CanJump,target.Y - source.Y < -1.0f)

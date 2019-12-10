@@ -9,7 +9,9 @@ open System
 
 type MyStrategy() =
     let location: Location = new Location();
-    let mutable pathfind: Map<Cell,Cell> = Map.empty
+    let mutable pathfind: Map<Cell,Cell> = Map.empty    
+    let mutable path: Cell[] = Array.empty<Cell>
+    let mutable nextStep: int = 0
     let elapsed msg f = 
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
@@ -169,8 +171,18 @@ type MyStrategy() =
         //    targetPos <- nearestEnemy.Value.Position
 
         //targetPos <- {X=15.0;Y=26.0}
-        let path = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Array.ofSeq
+        if path.Length - 1 > nextStep && myCell = path.[nextStep] then 
+            nextStep <- nextStep + 1
+
+        let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
+
+        if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
+            path <- newPath
+            nextStep <- 1
+
         path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.HotPink)
+
+
 
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
@@ -240,7 +252,7 @@ type MyStrategy() =
 
         let nextTile = match path.Length with
                         | 1 -> path |> Seq.head
-                        | x when x > 0 -> path |> Seq.rev |> Seq.skip 1 |> Seq.head
+                        | x when x > 0 -> path |> Seq.skip nextStep |> Seq.head
                         | _ -> myCell
 
         let (jump, jumpDown, velocity) = Controller.makeMove unit myPos nextTile
