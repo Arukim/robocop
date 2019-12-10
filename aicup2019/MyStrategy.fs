@@ -111,7 +111,7 @@ type MyStrategy() =
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
         elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
         
-        if unit.OnGround then
+        if unit.OnGround  || unit.OnLadder then
             elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
                                             match newPath |> Seq.isEmpty with
                                             | false -> pathfind <- newPath
@@ -121,7 +121,7 @@ type MyStrategy() =
         
                             
                             
-        ///pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
+        pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges
@@ -162,16 +162,17 @@ type MyStrategy() =
 
         let mutable targetPos = unit.Position
 
-        //if not unit.Weapon.IsSome && nearestWeapon.IsSome then
-        if nearestMine.IsSome then
+        if not unit.Weapon.IsSome && nearestWeapon.IsSome then
+            targetPos <- fst nearestWeapon.Value
+        else if unit.Health < 80 && nearestHealthPack.IsSome then
+            targetPos <- nearestHealthPack.Value
+        else if nearestMine.IsSome then
             targetPos <- nearestMine.Value
-        //else if unit.Health < 80 && nearestHealthPack.IsSome then
-        //    targetPos <- nearestHealthPack.Value
-        //else if nearestEnemy.IsSome then
-        //    targetPos <- nearestEnemy.Value.Position
+        else if nearestEnemy.IsSome then
+            targetPos <- nearestEnemy.Value.Position
 
         //targetPos <- {X=15.0;Y=26.0}
-        if path.Length - 1 > nextStep && myCell = path.[nextStep] then 
+        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f && unit.OnGround then 
             nextStep <- nextStep + 1
 
         let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
@@ -253,9 +254,9 @@ type MyStrategy() =
         let nextTile = match path.Length with
                         | 1 -> path |> Seq.head
                         | x when x > 0 -> path |> Seq.skip nextStep |> Seq.head
-                        | _ -> myCell
+                        | _ -> zmyCell
 
-        let (jump, jumpDown, velocity) = Controller.makeMove unit myPos nextTile
+        let (jump, jumpDown, velocity) = Controller.makeMove game.Level.Tiles unit myCell nextTile
 
         {
             Velocity = velocity
