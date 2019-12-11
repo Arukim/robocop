@@ -2,9 +2,10 @@
 
 open AiCup2019.Model
 open Robocop.Utils
+open Robocop.Core
 
 type CellTile = {Cell: Cell; Tile: Tile}
-type ConnectionType = Walk | JumpUp | JumpDown
+type ConnectionType = Walk | JumpUp | JumpPad | JumpDown
 
 type Link = {Target: Cell; Type: ConnectionType; Dist: single}        
 
@@ -42,8 +43,12 @@ type ZonePlatform(cells: array<Cell>) =
                 match tiles.[tail.X].[tail.Y] with | x when x = Tile.Empty || x = Tile.Ladder -> yield tail; | _ -> ignore()
             }
 
+type ZoneJumpPad(cell: Cell, targetCell: Cell) = 
+    member _.Cell = cell
+    member _.TargetCell = targetCell       
+
 module Zones =
-    type Zone = Ground of ZoneGround | Ladder of ZoneLadder | Platform of ZonePlatform
+    type Zone = Ground of ZoneGround | Ladder of ZoneLadder | Platform of ZonePlatform | JumpPad of ZoneJumpPad
     
     /// <summary> builds horizontal walls from input cells
     /// applying <c> g </c> function on results

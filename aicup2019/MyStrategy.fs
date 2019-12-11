@@ -111,7 +111,7 @@ type MyStrategy() =
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
         elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
         
-        if unit.OnGround  || unit.OnLadder then
+        if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
             elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
                                             match newPath |> Seq.isEmpty with
                                             | false -> pathfind <- newPath
@@ -172,7 +172,8 @@ type MyStrategy() =
             targetPos <- nearestEnemy.Value.Position
 
         //targetPos <- {X=15.0;Y=26.0}
-        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f && unit.OnGround then 
+        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f 
+            && (game.Level.Tiles.[(path.[nextStep]).X].[(path.[nextStep]).Y - 1] = Tile.Wall || unit.OnGround) then 
             nextStep <- nextStep + 1
 
         let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
@@ -254,7 +255,7 @@ type MyStrategy() =
         let nextTile = match path.Length with
                         | 1 -> path |> Seq.head
                         | x when x > 0 -> path |> Seq.skip nextStep |> Seq.head
-                        | _ -> zmyCell
+                        | _ -> myCell
 
         let (jump, jumpDown, velocity) = Controller.makeMove game.Level.Tiles unit myCell nextTile
 
