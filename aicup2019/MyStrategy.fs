@@ -192,6 +192,12 @@ type MyStrategy() =
                                         | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
                                         | None -> { X = 0.0; Y = 0.0 }
 
+        let lastAngle = match unit.Weapon with                            
+                            | Some w -> match w.LastAngle with 
+                                        | Some a -> {X=cos a; Y= sin a}:Vec2Double
+                                        | _ -> aim
+                            | _ -> aim
+
         match hitFrame with
         | Some (head,last) ->
                     aim <- {X= double ((head.X + last.X)/2.0f)- unit.Position.X; Y = double ((head.Y + last.Y)/2.0f)- unit.Position.Y - 1.0;}
@@ -263,7 +269,7 @@ type MyStrategy() =
             Velocity = velocity
             Jump = jump
             JumpDown = jumpDown
-            Aim = aim
+            Aim = if shoot then lastAngle else aim
             Shoot = shoot
             SwapWeapon = false
             PlantMine = false

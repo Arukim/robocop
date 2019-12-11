@@ -151,9 +151,9 @@ type Location() =
            let pathsGround = tiles |> this.GroundsAndPlatformsParse
            let jumpPads = this.JumpPadsParse()
 
-           pathsUp |> Seq.iter (fun edges ->
-               let p1, p2 = edges
-               Logger.drawLine p1 p2 Palette.LightSeaGreen)
+           //pathsUp |> Seq.iter (fun edges ->
+           //    let p1, p2 = edges
+           //    Logger.drawLine p1 p2 Palette.LightSeaGreen)
 
            //pathsDown |> Seq.iter (fun edges ->
            //              let p1, p2 = edges
