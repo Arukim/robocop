@@ -63,6 +63,11 @@ module Tracing =
             |> Seq.concat
             |> Seq.distinct
 
+    let traceFuture (game: Game) =
+        let tiles = game.Level.Tiles
+        let player = game.Players
+        ignore()
+
     let traceHitFrame (tiles:Tile[][]) (from:Vec2Double) (target:Vec2Double) =
         let filter (target: Vector2) (pos:Vector2) = 
             tiles.[int pos.X].[int pos.Y] = Tile.Wall ||
