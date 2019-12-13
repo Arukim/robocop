@@ -181,15 +181,19 @@ type MyStrategy() =
                 targetPos <- nearestHealthPack.Value
                 else
                 targetPos <- startPos.Value
-        //else if nearestMine.IsSome then
-        //    targetPos <- nearestMine.Value
+        else if nearestMine.IsSome && unit.Mines < 2 then
+            targetPos <- nearestMine.Value
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
 
+        let mutable plantMine = false
         //targetPos <- {X=15.0;Y=26.0}
         if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f 
             && (game.Level.Tiles.[(path.[nextStep]).X].[(path.[nextStep]).Y - 1] = Tile.Wall || unit.OnGround) then 
             nextStep <- nextStep + 1
+        
+        if targetPos = startPos.Value then plantMine <- true
+
 
         let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
 
@@ -287,6 +291,6 @@ type MyStrategy() =
             Aim = aim
             Shoot = shoot
             SwapWeapon = false
-            PlantMine = false
+            PlantMine = plantMine
             Reload = false
         }          
