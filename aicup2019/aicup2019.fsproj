@@ -47,9 +47,11 @@
     <Compile Include="Map\Cell.fs" />
     <Compile Include="Map\UnitSim.fs" />
     <Compile Include="Map\Tracing.fs" />
+    <Compile Include="Map\Oracle.fs" />
     <Compile Include="Map\Zones.fs" />
     <Compile Include="Map\Location.fs" />
     <Compile Include="Map\Pathfinder.fs" />
+    <Compile Include="Player\Manager.fs" />
     <Compile Include="Player\Controller.fs" />
     <Compile Include="MyStrategy.fs" />
     <Compile Include="Runner.fs" />

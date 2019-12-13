@@ -6,9 +6,11 @@ open Robocop.Utils
 open Robocop.Player
 open System.Numerics
 open System
+open Robocop.Core
 
 type MyStrategy() =
     let location: Location = new Location();
+    let mutable manager:Option<Manager> = None
     let mutable pathfind: Map<Cell,Cell> = Map.empty    
     let mutable path: Cell[] = Array.empty<Cell>
     let mutable nextStep: int = 0
@@ -28,8 +30,16 @@ type MyStrategy() =
             | WeaponType.RocketLauncher -> 0.0
             | _ -> 100.0
 
+    member this.Init(game) =
+        manager <- Some(new Manager(game))
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
+        match game.CurrentTick with
+            | 0 -> this.Init(game.Properties)
+            | _ -> ignore()
+        
+        let (shoot, aim) = elapsed "Manager turn" (fun () -> manager.Value.TurnParse game unit)
+
         let tiles = game.Level.Tiles
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
         let myCell = Cell.fromVector unit.Position
@@ -39,6 +49,8 @@ type MyStrategy() =
                                         |> Array.sortBy(fun u -> MyStrategy.DistanceSqr(u.Position, unit.Position))
                                         |> Seq.tryFind(fun _ -> true)
 
+
+       
         let nearestWeapon = game.LootBoxes |> Array.choose(fun b -> match b.Item with
                                                                         | Item.Weapon x -> Some(b.Position, x.WeaponType)
                                                                         | _ -> None)
@@ -121,7 +133,7 @@ type MyStrategy() =
         
                             
                             
-        pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
+        //pathfind |> Map.iter (fun a b -> Logger.drawLine a.toCenter b.toCenter Palette.LightSlateGray)
 
         ////groundLines |> Seq.iter (fun edges ->
         ////                       let p1, p2 = edges
@@ -164,10 +176,10 @@ type MyStrategy() =
 
         if not unit.Weapon.IsSome && nearestWeapon.IsSome then
             targetPos <- fst nearestWeapon.Value
-        else if unit.Health < 80 && nearestHealthPack.IsSome then
+        else if unit.Health < 90 && nearestHealthPack.IsSome then
             targetPos <- nearestHealthPack.Value
-        else if nearestMine.IsSome then
-            targetPos <- nearestMine.Value
+        //else if nearestMine.IsSome then
+        //    targetPos <- nearestMine.Value
         else if nearestEnemy.IsSome then
             targetPos <- nearestEnemy.Value.Position
 
@@ -188,35 +200,35 @@ type MyStrategy() =
 
         //debug.draw(CustomData.Log {Text = sprintf "Target pos: %A" targetPos })
 
-        let mutable aim: Vec2Double = match nearestEnemy with
-                                        | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
-                                        | None -> { X = 0.0; Y = 0.0 }
+        //let mutable aim: Vec2Double = match nearestEnemy with
+        //                                | Some x -> { X = x.Position.X - unit.Position.X; Y = x.Position.Y - unit.Position.Y}
+        //                                | None -> { X = 0.0; Y = 0.0 }
 
-        let lastAngle = match unit.Weapon with                            
-                            | Some w -> match w.LastAngle with 
-                                        | Some a -> {X=cos a; Y= sin a}:Vec2Double
-                                        | _ -> aim
-                            | _ -> aim
+        //let lastAngle = match unit.Weapon with                            
+        //                    | Some w -> match w.LastAngle with 
+        //                                | Some a -> {X=cos a; Y= sin a}:Vec2Double
+        //                                | _ -> aim
+        //                    | _ -> aim
 
-        match hitFrame with
-        | Some (head,last) ->
-                    aim <- {X= double ((head.X + last.X)/2.0f)- unit.Position.X; Y = double ((head.Y + last.Y)/2.0f)- unit.Position.Y - 1.0;}
-                    debug.draw(CustomData.Polygon {
-                                                    Vertices = [|
-                                                        {
-                                                            Position = {X = single unit.Position.X; Y = single unit.Position.Y + 1.0f}
-                                                            Color = color
-                                                        };
-                                                        {
-                                                            Position = {X = head.X; Y = head.Y}
-                                                            Color = color
-                                                        };
-                                                        {
-                                                            Position = {X = last.X; Y = last.Y}
-                                                            Color = color
-                                                        };
-                                                    |]})
-        | None -> ignore()
+        //match hitFrame with
+        //| Some (head,last) ->
+        //            aim <- {X= double ((head.X + last.X)/2.0f)- unit.Position.X; Y = double ((head.Y + last.Y)/2.0f)- unit.Position.Y - 1.0;}
+        //            //debug.draw(CustomData.Polygon {
+        //            //                                Vertices = [|
+        //            //                                    {
+        //            //                                        Position = {X = single unit.Position.X; Y = single unit.Position.Y + 1.0f}
+        //            //                                        Color = color
+        //            //                                    };
+        //            //                                    {
+        //            //                                        Position = {X = head.X; Y = head.Y}
+        //            //                                        Color = color
+        //            //                                    };
+        //            //                                    {
+        //            //                                        Position = {X = last.X; Y = last.Y}
+        //            //                                        Color = color
+        //            //                                    };
+        //            //                                |]})
+        //| None -> ignore()
 
         //let mutable jump = targetPos.Y > unit.Position.Y
 
@@ -247,11 +259,11 @@ type MyStrategy() =
                                                                              
                 | _ -> false
 
-        let shoot = match unit.Weapon with
-                        | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position nearestEnemy game.Level.Tiles
-                        | Some x when x.Typ = WeaponType.Pistol -> x.FireTimer.IsNone && (enemyDist < 2.1f || checkBulletWeapon 0.80f x)
-                        | Some x when x.Typ = WeaponType.AssaultRifle -> x.FireTimer.IsNone && enemyDist < 5.5f && checkBulletWeapon 0.75f x || enemyDist < 2.1f
-                        | _ -> false
+        //let shoot = match unit.Weapon with
+        //                | Some x when x.Typ = WeaponType.RocketLauncher -> checkGrenadeSafety unit.Position nearestEnemy game.Level.Tiles
+        //                | Some x when x.Typ = WeaponType.Pistol -> x.FireTimer.IsNone && (enemyDist < 2.1f || checkBulletWeapon 0.80f x)
+        //                | Some x when x.Typ = WeaponType.AssaultRifle -> x.FireTimer.IsNone && enemyDist < 5.5f && checkBulletWeapon 0.75f x || enemyDist < 2.1f
+        //                | _ -> false
 
         //let maxVel curr tgt =
         //    if tgt > curr then 10.0 else -10.0
@@ -269,7 +281,7 @@ type MyStrategy() =
             Velocity = velocity
             Jump = jump
             JumpDown = jumpDown
-            Aim = if shoot then lastAngle else aim
+            Aim = aim
             Shoot = shoot
             SwapWeapon = false
             PlantMine = false

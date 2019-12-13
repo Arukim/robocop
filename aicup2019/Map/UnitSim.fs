@@ -9,8 +9,8 @@ type UnitSim(gameLength) =
     let mutable currTurnNum = 0
 
     let predictFuture turn =
-        let prevTurn, currTurn = Vector2.fromVec2Double turnLog.[turn - 1].Value.Position, 
-                                 Vector2.fromVec2Double turnLog.[turn - 2].Value.Position
+        let prevTurn, currTurn = Vector2.fromVec2Double turnLog.[turn - 2].Value.Position, 
+                                 Vector2.fromVec2Double turnLog.[turn - 1].Value.Position
         currTurn - prevTurn
 
     member _.AddTurn turn unit = 
