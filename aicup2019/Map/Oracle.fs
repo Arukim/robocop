@@ -23,15 +23,21 @@ module Oracle =
                         
         let checkWallHit (pos:Vector2) = 
             tiles.[int pos.X].[int pos.Y] = Tile.Wall
+        
+
+        let minX, maxX = (0, tiles.Length)
+        let minY, maxY = (0, tiles.[0].Length)
+        let sanityCheckX x = x <= minX || x >= maxX
+        let sanityCheckY y = y <= minY || y >= maxY
 
 
         let checkUnitXHit x y =
             let a, b, c = (int(x - 0.5f), int(x + 0.5f), int y)
-            tiles.[a].[c] = Tile.Wall || tiles.[b].[c] = Tile.Wall
+            sanityCheckX a || sanityCheckY c || tiles.[a].[c] = Tile.Wall || tiles.[b].[c] = Tile.Wall
         
         let checkUnitYHit x y =
             let a, b, c = (int(y - 1.0f), int(y + 1.0f), int x)
-            tiles.[c].[a] = Tile.Wall || tiles.[c].[b] = Tile.Wall
+            sanityCheckX c || sanityCheckY a || tiles.[c].[a] = Tile.Wall || tiles.[c].[b] = Tile.Wall
 
         let checkHit (unit:Vector2) (delta:Vector2) =
             let newPos = unit + delta
