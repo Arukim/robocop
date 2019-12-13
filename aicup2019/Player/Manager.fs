@@ -69,7 +69,7 @@ type Manager(props: Properties) =
 
             let hitRate = match weapon.Typ with
                                 | WeaponType.Pistol -> 80
-                                | WeaponType.AssaultRifle -> 95
+                                | WeaponType.AssaultRifle -> 88
                                 | WeaponType.RocketLauncher -> 90
                                 | _ -> 90
             shoot <- hits |> Array.length > hitRate && weapon.FireTimer.IsNone

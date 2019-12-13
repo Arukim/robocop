@@ -14,6 +14,7 @@ type MyStrategy() =
     let mutable pathfind: Map<Cell,Cell> = Map.empty    
     let mutable path: Cell[] = Array.empty<Cell>
     let mutable nextStep: int = 0
+    let mutable startPos: Option<Vec2Double> = None
     let elapsed msg f = 
         let timer = new System.Diagnostics.Stopwatch()
         timer.Start()
@@ -30,12 +31,13 @@ type MyStrategy() =
             | WeaponType.RocketLauncher -> 0.0
             | _ -> 100.0
 
-    member this.Init(game) =
+    member this.Init(game, (unit: Unit)) =
         manager <- Some(new Manager(game))
+        startPos <- Some(unit.Position)
             
     member this.getAction(unit: Unit, game: Game, debug: Debug) =
         match game.CurrentTick with
-            | 0 -> this.Init(game.Properties)
+            | 0 -> this.Init(game.Properties, unit)
             | _ -> ignore()
         
         let (shoot, aim) = elapsed "Manager turn" (fun () -> manager.Value.TurnParse game unit)
@@ -174,8 +176,11 @@ type MyStrategy() =
 
         if not unit.Weapon.IsSome && nearestWeapon.IsSome then
             targetPos <- fst nearestWeapon.Value
-        else if unit.Health < 90 && nearestHealthPack.IsSome then
-            targetPos <- nearestHealthPack.Value
+        else if unit.Health < 90 then
+            if nearestHealthPack.IsSome then
+                targetPos <- nearestHealthPack.Value
+                else
+                targetPos <- startPos.Value
         //else if nearestMine.IsSome then
         //    targetPos <- nearestMine.Value
         else if nearestEnemy.IsSome then
