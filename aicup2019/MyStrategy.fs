@@ -74,8 +74,6 @@ type MyStrategy() =
                             | Some x -> Tracing.traceHitFrame tiles unit.Position x.Position
                             | _ -> None
         
-        let color = {R =  0.0f; G = (200.0f)/ 255.0f; B = 0.0f; A = 0.25f}
-
         
 
 
@@ -121,7 +119,7 @@ type MyStrategy() =
 
         
         elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))  
-        elapsed "Path map" (fun () -> game.Level.Tiles |> location.buildPathMap)
+        elapsed "Path map" (fun () -> if game.CurrentTick = 1 then game.Level.Tiles |> location.buildPathMap)
         
         if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
             elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)

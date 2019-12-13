@@ -38,11 +38,14 @@ module Pathfinder =
 
     let findPath (graph: Map<Cell,Cell>) source target =
         let u = ref target
-        seq {
+        let mutable maxDepth = 50
+        let path = seq {
             if graph.ContainsKey(u.contents) || u.contents = source then
                 let mutable go = true
-                while go do
+                while go && maxDepth > 0 do
+                    maxDepth <- maxDepth - 1
                     yield u.contents
                     go <- graph.TryGetValue(u.contents, u)
         }
+        if maxDepth > 0 then path else Seq.empty
 
