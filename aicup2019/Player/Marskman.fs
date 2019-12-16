@@ -5,11 +5,9 @@ open Robocop.Map
 open System.Numerics
 open Robocop.Utils
 
-type Manager(props: Properties) =
-
+type Marksman(props: Properties) =
     let unitSim: UnitSim = new UnitSim(props.MaxTickCount);
 
-    
     let predictPos game (unit:Unit) (enemy:Unit) (weapon:Weapon) =
         let tgtDirection = unitSim.Predict (game.CurrentTick + 1)
         let tgtPosition = Vector2(single enemy.Position.X, single enemy.Position.Y + 1.0f)
@@ -28,7 +26,7 @@ type Manager(props: Properties) =
             Direction = direction
             Spread = single weapon.Spread
             Count = 100}
-        
+    
         let hits = Oracle.traceFuture game traceParams targetParams
 
         hits |> Seq.iter (fun (x,_) -> Logger.drawDot x Palette.DarkRed)
@@ -43,17 +41,22 @@ type Manager(props: Properties) =
         let hits360 = Oracle.traceFuture game trace360Params targetParams
         //hits360 |> Seq.iter (fun (x,_) -> Logger.drawDot x Palette.BlueViolet)
         (hits, hits360)
-    
+
     static member DistanceSqr (a: Vec2Double, b: Vec2Double) = 
         (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y)
 
+        
+    static member WeaponPreference (t: WeaponType) =
+        match t with
+            | WeaponType.RocketLauncher -> 0.0f
+            | _ -> 100.0f
 
     member _.TurnParse (game:Game) (unit:Unit) =
         let myWeapon = unit.Weapon
         let nearestEnemy = game.Units |> Array.filter(fun u -> u.PlayerId <> unit.PlayerId)
-                                               |> Array.sortBy(fun u -> Manager.DistanceSqr(u.Position, unit.Position))
+                                               |> Array.sortBy(fun u -> Marksman.DistanceSqr(u.Position, unit.Position))
                                                |> Seq.tryFind(fun _ -> true)
-        
+    
         match nearestEnemy with 
             | Some x -> unitSim.AddTurn game.CurrentTick x
             | None _ -> ignore()
@@ -81,10 +84,10 @@ type Manager(props: Properties) =
                                   Logger.drawLine a n Palette.LawnGreen
                                   {X = avgX * 50.0; Y= avgY * 50.0}:Vec2Double
                         | _ -> lastAngle
-        
-        
+    
+    
             Logger.drawText(sprintf "Hits %A, Hits360 %A, shoot %A" (hits |> Seq.length) (hits360 |> Seq.length) shoot)
 
         (shoot, angle)
-    
+
 

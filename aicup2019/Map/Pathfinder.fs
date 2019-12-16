@@ -31,10 +31,13 @@ module Pathfinder =
                     dist.[link.Target] <- alt
                     prev.[link.Target] <- Some u.Key
 
-        prev |> Seq.choose (fun kv -> match kv.Value with
-                                        | Some v -> Some (kv.Key, v)
-                                        | _ -> None)
-             |> Map.ofSeq
+        let path = prev |> Seq.choose (fun kv -> match kv.Value with
+                                                    | Some v -> Some (kv.Key, v)
+                                                    | _ -> None)
+                        |> Map.ofSeq
+        let distMap = dist |> Seq.map (fun kv -> (kv.Key, kv.Value))
+                           |> Map.ofSeq
+        (path, distMap)
 
     let findPath (graph: Map<Cell,Cell>) source target =
         let u = ref target
@@ -48,4 +51,10 @@ module Pathfinder =
                     go <- graph.TryGetValue(u.contents, u)
         }
         if maxDepth > 0 then path else Seq.empty
+    
+    let findDistance (dist:Map<Cell, single>) cell =
+        if dist.ContainsKey cell then
+            dist.[cell]
+        else
+            infinityf
 

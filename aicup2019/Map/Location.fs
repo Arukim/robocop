@@ -145,7 +145,7 @@ type Location() =
                                                        
             
 
-       member this.buildPathMap (tiles:Tile[][])  =
+       member this.updatePathMap (tiles:Tile[][])  =
            let pathsUp = tiles |> this.EdgeUpGroundParse
            let pathsDown = tiles |> this.EdgeDownGroundParse
            let pathsGround = tiles |> this.GroundsAndPlatformsParse

@@ -39,6 +39,7 @@
     <Compile Include="Utils\Palette.fs" />
     <Compile Include="Utils\ColorSingleExt.fs" />
     <Compile Include="Utils\Logger.fs" />
+    <Compile Include="Utils\Diag.fs" />
     <Compile Include="Utils\Seq.fs" />
     <Compile Include="Utils\Vector2.fs" />
     <Compile Include="Utils\Geom.fs" />
@@ -51,8 +52,11 @@
     <Compile Include="Map\Zones.fs" />
     <Compile Include="Map\Location.fs" />
     <Compile Include="Map\Pathfinder.fs" />
-    <Compile Include="Player\Manager.fs" />
+    <Compile Include="Player\Marskman.fs" />
     <Compile Include="Player\Controller.fs" />
+    <Compile Include="Player\Armory.fs" />
+    <Compile Include="Player\Warrior.fs" />
+    <Compile Include="Player\Strategy.fs" />
     <Compile Include="MyStrategy.fs" />
     <Compile Include="Runner.fs" />
   </ItemGroup>

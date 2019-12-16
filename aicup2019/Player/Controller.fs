@@ -7,7 +7,6 @@ open System.Numerics
 open Robocop.Core
 
 module Controller =
-
     let defaultMove unit (source:Vector2) (target:Vector2) (tgt:Cell)  =
         let checkJump =
             match unit.OnLadder with
