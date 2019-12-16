@@ -28,7 +28,7 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
         let myCell = Cell.fromVector unit.Position              
           
         if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
-            Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.PathMap (Cell.fromVector unit.Position)
+            Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.BasePathMap (Cell.fromVector unit.Position)
                                                  match fst newPath |> Seq.isEmpty with
                                                         | false -> pathfind <- fst newPath
                                                                    distMap <- snd newPath

@@ -7,7 +7,7 @@ open Robocop.Core
 type CellTile = {Cell: Cell; Tile: Tile}
 type ConnectionType = Walk | JumpUp | JumpPad | JumpDown
 
-type Link = {Target: Cell; Type: ConnectionType; Dist: single}        
+type Link = {Source: Cell; Target: Cell; Type: ConnectionType; Dist: single}        
 
 type ZoneGround(cells: array<Cell>) =
     member _.Cells = cells

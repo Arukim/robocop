@@ -15,10 +15,11 @@ type Strategy(game: Game, myTeam: int) =
                               |> Map.ofArray                                  
 
     let calcTick game = 
-        location.updatePathMap game
+        location.drawPathMap
 
     member _.Init() = 
-        Diag.elapsed "Location init" (fun () -> location.Parse(game.Level.Tiles))
+        Diag.elapsed "Location init" (fun () -> location.Parse game.Level.Tiles)
+        Diag.elapsed "Base path map" (fun () -> location.buildBasePathMap game.Level.Tiles)
 
     member _.PrepareTurn(game: Game) =
         if lastCalculatedTick <> game.CurrentTick then

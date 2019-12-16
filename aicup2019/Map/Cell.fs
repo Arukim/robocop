@@ -32,3 +32,7 @@ type Cell = {X: int; Y: int} with
         {X=int v.X; Y=int v.Y}        
     static member fromVector (v:Vec2Double) =
         {X=int v.X; Y=int v.Y}
+
+    static member dist (a:Cell) (b:Cell) =
+        let (va, vb) = (a.toCenter, b.toCenter)
+        Vector2.Distance(va,vb)
