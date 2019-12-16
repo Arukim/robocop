@@ -40,3 +40,5 @@ type Armory(game: Game) =
 
     member _.HasMines = freeMines.Length > 0
 
+    member _.HasMine mine = freeMines |> Array.contains(mine)
+

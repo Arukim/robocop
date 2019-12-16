@@ -7,7 +7,7 @@ open System
 
 module Tracing =
 
-    let castRay (tiles:Tile[][]) (start: single*single) (finish: single*single) =
+    let castRay (tiles:Tile[][]) collisionFilter (start: single*single) (finish: single*single) =
         let vFrom, vTo = Vector2.fromTuple start, Vector2.fromTuple finish
         let inc: Vector2 = vFrom |> Vector2.sub vTo
                                  |> Vector2.Normalize 
@@ -22,7 +22,7 @@ module Tracing =
                 let newPos = pos + inc
                 let newCell = {X = int newPos.X; Y = int newPos.Y}: Cell
                 if newCell <> prevCell then yield newCell
-                if Vector2.Distance(newPos, vTo) > 0.2f && tiles.[newCell.X].[newCell.Y] <> Tile.Wall then
+                if Vector2.Distance(newPos, vTo) > 0.2f && collisionFilter tiles.[newCell.X].[newCell.Y] then
                     yield! trace tiles vTo newCell newPos
             }
 
@@ -59,7 +59,7 @@ module Tracing =
         game.Level.Tiles 
             |> Matrices.allBorders
             |> Seq.map(fun x -> single (fst x), single (snd x))
-            |> Seq.map(fun x -> castRay game.Level.Tiles start x)
+            |> Seq.map(fun x -> castRay game.Level.Tiles (fun t -> t = Tile.Wall) start x)
             |> Seq.concat
             |> Seq.distinct
 

@@ -8,6 +8,7 @@ open System
 
 
 type Location() =
+       let genCell x y v = ({X=x;Y=y}:Cell),v 
        let collisionFilterFall cell =
            cell = Tile.Wall || cell = Tile.Ladder || cell = Tile.Platform        
        let collisionFilterJump cell =
@@ -30,8 +31,7 @@ type Location() =
        member val Platforms : ZonePlatform[] = platforms with get, set
        member val JumpPads : ZoneJumpPad[] = jumpPads with get, set
 
-       member _.DownParse (tiles:Tile[][]) =    
-            let genCell x y v = ({X=x;Y=y}:Cell),v   
+       member _.JumpDownParse (tiles:Tile[][]) =      
             let getDowns (cell:Cell) =
                 let (left, down, right) = cell.down.left, cell.down, cell.down.right
                 seq {
@@ -51,47 +51,24 @@ type Location() =
                   |> Seq.collect(fun x -> x)
                  
     
-        member this.EdgeUpGroundParse (tiles:Tile[][]) =        
-            let fromGrounds = this.Grounds |> Seq.collect(fun x -> x.Standable(tiles))
-                                           |> Seq.append (this.Platforms |> Seq.collect(fun x -> x.Standable(tiles)))
-                                     |> Seq.map(fun x -> seq { x.toCenter})
-                                     |> Seq.collect(fun x -> x)
-
-            //fromGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.Yellow)                       
-            
-            let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable)
-                                           |> Seq.map(fun x -> seq { x.toCenter})
-                                           |> Seq.collect(fun x -> x)
-
-             
-            //ladders |> Seq.iter (fun p -> Logger.drawDot p Palette.AliceBlue)
-
-            let toGrounds = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
-                                                             seq {
-                                                                     match a with Some t -> yield! seq {t.up.toCenter} | None -> ignore()
-                                                                     match b with Some t -> yield! seq {t.up.toCenter } | None -> ignore()
-                                                             })
-                                                |> Seq.append (this.Platforms 
-                                                                 |> Seq.collect(fun x -> x.Cells) 
-                                                                 |> Seq.map(fun x -> seq { x.up.toCenter}))
-                                     |> Seq.collect(fun x -> x)
-            
-            //toGrounds |> Seq.iter (fun p -> Logger.drawDot p Palette.OrangeRed)
-
-            let crossBasic = seq { for a in fromGrounds |> Seq.append ladders do
-                                    for b in toGrounds |> Seq.append ladders do
-                                        if a <> b then yield a, b }
-
-            crossBasic
-                |> Seq.filter(fun (a,b) -> a.Y <= b.Y && b.Y - a.Y <= Constants.Max_Jump && Math.Abs(b.X - a.X) <= Constants.Max_Jump)
-                |> Seq.choose(fun (a,b) ->
-                                            let trace = Tracing.castRay2 tiles collisionFilterJump a b
-                                            let diff = Vector2.Distance(trace, b)
-                                            match diff with
-                                                | x when x < 1.0f -> Some(a, trace)
-                                                | _ -> None)
-                |> Seq.groupBy (fun (a,b) -> {| Ax = int a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y|} ) 
-                |> Seq.map(fun (_,v) -> v |> Seq.head)
+        member _.JumpUpParse (tiles:Tile[][]) =  
+            let getUps (cell:Cell) =
+                let (left, up, right) = cell.up.left, cell.up, cell.down.up
+                seq {
+                    if up.Y < tiles.Length && tiles.[up.X].[up.Y] <> Tile.Wall then
+                        yield (cell, up)
+                        if left.X >= 0 && tiles.[left.X].[left.Y] <> Tile.Wall  then
+                            yield (cell, left)                            
+                        if right.Y < tiles.Length && tiles.[right.X].[right.Y] <> Tile.Wall then
+                            yield (cell, right)
+                }            
+              
+            tiles |> Matrices.allTilesG genCell
+                  |> Seq.choose(fun (cell, t) -> 
+                        match t with
+                            | Tile.Empty -> Some (getUps cell)
+                            | _ -> None)
+                  |> Seq.collect(fun x -> x)            
 
         member this.EdgeDownGroundParse (tiles:Tile[][]) =
             let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
@@ -150,18 +127,18 @@ type Location() =
                                     )
 
        member this.buildBasePathMap (tiles:Tile[][]) =
-           let pathsUp = tiles |> this.EdgeUpGroundParse
+           let pathsUp = tiles |> this.JumpUpParse
            let cliffDown = tiles |> this.EdgeDownGroundParse
-           let pathsDown = tiles |> this.DownParse
+           let pathsDown = tiles |> this.JumpDownParse
            let pathsGround = tiles |> this.GroundsAndPlatformsParse
            let jumpPads = this.JumpPadsParse()
                   
            this.BasePathMap <- pathsUp |> Seq.map(fun (a,b) -> 
                                                        {
-                                                           Source=Cell.fromVector a
-                                                           Target=Cell.fromVector b
+                                                           Source= a
+                                                           Target= b
                                                            Type=ConnectionType.JumpUp
-                                                           Dist= Vector2.dist a b
+                                                           Dist= Cell.dist a b
                                                        })
                                |> Seq.append(
                                    jumpPads |> Seq.map(fun (a,b) -> 

@@ -15,7 +15,8 @@ type Strategy(game: Game, myTeam: int) =
                               |> Map.ofArray                                  
 
     let calcTick game = 
-        location.drawPathMap
+        //location.drawPathMap
+        ignore()
 
     member _.Init() = 
         Diag.elapsed "Location init" (fun () -> location.Parse game.Level.Tiles)

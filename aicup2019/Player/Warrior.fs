@@ -31,7 +31,7 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
             Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.BasePathMap (Cell.fromVector unit.Position)
                                                  match fst newPath |> Seq.isEmpty with
                                                         | false -> pathfind <- fst newPath
-                                                                   distMap <- snd newPath
+                                                                   distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
                                                         | _ -> ignore())
 
         if unit.Weapon.IsNone then
@@ -39,6 +39,10 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
                 targetWeapon <- armory.SelectWeapon(distMap)
         else
             targetWeapon <- None
+
+        if targetMine.IsSome then
+            if not (armory.HasMine targetMine.Value) then
+                targetMine <- None
 
 
         let mutable targetPos = unit.Position
@@ -72,8 +76,7 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
 
         let mutable plantMine = false
         //targetPos <- {X=15.0;Y=26.0}
-        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f 
-            && (game.Level.Tiles.[(path.[nextStep]).X].[(path.[nextStep]).Y - 1] = Tile.Wall || unit.OnGround) then 
+        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f then 
             nextStep <- nextStep + 1
                
         if targetPos = startPos.Value then plantMine <- true
