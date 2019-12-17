@@ -5,7 +5,7 @@ open Robocop.Utils
 open Robocop.Core
 
 type CellTile = {Cell: Cell; Tile: Tile}
-type ConnectionType = Walk | JumpUp | JumpPad | JumpDown
+type ConnectionType = Walk | JumpUp | JumpUpTouch | JumpPad | JumpDown | JumpDownTouch
 
 type Link = {Source: Cell; Target: Cell; Type: ConnectionType; Dist: single}        
 

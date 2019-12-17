@@ -25,13 +25,13 @@ type Location() =
        let jumpPads = Array.empty<ZoneJumpPad>
        let mutable parsed = false
 
-       member val BasePathMap = Map.empty with get,set
+       member val BasePathMap = Seq.empty with get,set
        member val Grounds : ZoneGround[] = grounds with get, set
        member val Ladders : ZoneLadder[] = ladders with get, set
        member val Platforms : ZonePlatform[] = platforms with get, set
        member val JumpPads : ZoneJumpPad[] = jumpPads with get, set
 
-       member _.JumpDownParse (tiles:Tile[][]) =      
+       member this.JumpDownParse (tiles:Tile[][]) =      
             let getDowns (cell:Cell) =
                 let (left, down, right) = cell.down.left, cell.down, cell.down.right
                 seq {
@@ -42,18 +42,22 @@ type Location() =
                         if right.Y < tiles.Length && tiles.[right.X].[right.Y] = Tile.Empty then
                             yield (cell, right)
                 }            
-              
+            
+            let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable |> Seq.skip 1)
+                                       |> Seq.map(fun x -> (x, x.down))
+
             tiles |> Matrices.allTilesG genCell
                   |> Seq.choose(fun (cell, t) -> 
                         match t with
                             | Tile.Empty -> Some (getDowns cell)
                             | _ -> None)
                   |> Seq.collect(fun x -> x)
+                  |> Seq.append ladders
                  
     
-        member _.JumpUpParse (tiles:Tile[][]) =  
+        member this.JumpUpParse (tiles:Tile[][]) =  
             let getUps (cell:Cell) =
-                let (left, up, right) = cell.up.left, cell.up, cell.down.up
+                let (left, up, right) = cell.up.left, cell.up, cell.up.right
                 seq {
                     if up.Y < tiles.Length && tiles.[up.X].[up.Y] <> Tile.Wall then
                         yield (cell, up)
@@ -61,14 +65,15 @@ type Location() =
                             yield (cell, left)                            
                         if right.Y < tiles.Length && tiles.[right.X].[right.Y] <> Tile.Wall then
                             yield (cell, right)
-                }            
-              
+                } 
+                         
             tiles |> Matrices.allTilesG genCell
                   |> Seq.choose(fun (cell, t) -> 
                         match t with
                             | Tile.Empty -> Some (getUps cell)
+                            | Tile.Platform -> Some (getUps cell)
                             | _ -> None)
-                  |> Seq.collect(fun x -> x)            
+                  |> Seq.collect(fun x -> x)
 
         member this.EdgeDownGroundParse (tiles:Tile[][]) =
             let edges = this.Grounds |> Seq.map(fun x -> let a,b = x.EdgeCells tiles
@@ -89,55 +94,59 @@ type Location() =
            
 
             let platforms = this.Platforms |> Seq.collect(fun x -> x.Cells)
-                                           |> Seq.map(fun x -> (x, x.down))
+                                           |> Seq.map(fun x -> [(x, x.down);(x.up, x)])
+                                           |> Seq.collect(fun x -> x)
+
             
             edges |> Seq.append ladders
                   |> Seq.append platforms         
                
        member this.GroundsAndPlatformsParse (tiles:Tile[][]) =
-           this.Grounds |> Seq.map (fun x -> (x.Standable(tiles) |> Seq.map (fun x -> x.toCenter) |> Seq.pairwise))
-                        |> Seq.append (this.Platforms |> Seq.map(fun x -> x.Standable(tiles) |> Seq.map (fun x -> x.toCenter) |> Seq.pairwise))
-                        |> Seq.map (fun p -> p 
-                                               |> Seq.choose(fun (a,b) -> 
-                                                   let trace = Tracing.castRay2 tiles collisionFilterGrounds a b
-                                                   let diff = Vector2.Distance(trace, b)
-                                                   match diff with
-                                                       | x when x < 1.0f -> Some(a,trace)
-                                                       | _ -> None))                                                
+        
+           let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable)
+                                      |> Seq.map(fun x -> (x, x.up))
+
+           this.Grounds |> Seq.map (fun x -> (x.Standable(tiles) |> Seq.pairwise))
+                        |> Seq.append (this.Platforms |> Seq.map(fun x -> x.Standable(tiles) |> Seq.pairwise))
                         |> Seq.collect(fun x -> x)
-                        |> Seq.groupBy (fun (a,b) -> {| Ax = a.X; Ay = int a.Y; Bx = int b.X; By = int b.Y |} )
-                        |> Seq.map(fun (_,v) -> v |> Seq.head)
+                        |> Seq.append ladders
 
        
        member this.JumpPadsParse () =
             this.JumpPads |> Seq.map(fun x -> x.Cell, x.TargetCell)            
 
        member this.drawPathMap =
-            this.BasePathMap |> Map.iter(
-                                fun _ b -> b |> Seq.iter(fun link -> 
-                                                            let color = match link.Type with
-                                                                            | ConnectionType.JumpDown -> Palette.DarkSlateBlue
-                                                                            | ConnectionType.JumpUp -> Palette.LightSeaGreen
-                                                                            | ConnectionType.JumpPad -> Palette.GreenYellow
-                                                                            | ConnectionType.Walk -> Palette.CornflowerBlue
-                                                            Logger.drawLine link.Source.toCenter link.Target.toCenter color
-                                                            )
+            ignore()
+            //this.BasePathMap |> Map.iter(
+            //                    fun _ b -> b |> Seq.iter(fun link -> 
+            //                                                let color = match link.Type with
+            //                                                                | ConnectionType.JumpDown -> Palette.DarkSlateBlue
+            //                                                                | ConnectionType.JumpUp -> Palette.LightSeaGreen
+            //                                                                | ConnectionType.JumpUpTouch -> Palette.DarkOliveGreen
+            //                                                                | ConnectionType.JumpPad -> Palette.GreenYellow
+            //                                                                | ConnectionType.Walk -> Palette.CornflowerBlue
+            //                                                                | ConnectionType.JumpDownTouch -> Palette.RoyalBlue
+            //                                                Logger.drawLine link.Source.toCenter link.Target.toCenter color
+            //                                                )
                                     
                                     
-                                    )
+            //                        )
 
        member this.buildBasePathMap (tiles:Tile[][]) =
            let pathsUp = tiles |> this.JumpUpParse
-           let cliffDown = tiles |> this.EdgeDownGroundParse
+           let cliffDown = tiles |> this.EdgeDownGroundParse |> Array.ofSeq
            let pathsDown = tiles |> this.JumpDownParse
            let pathsGround = tiles |> this.GroundsAndPlatformsParse
            let jumpPads = this.JumpPadsParse()
+
+           let standables = this.Platforms |> Seq.collect(fun x -> x.WalkCells) |> Array.ofSeq
                   
            this.BasePathMap <- pathsUp |> Seq.map(fun (a,b) -> 
+                                                       let t = if (standables |> Array.contains b) then ConnectionType.JumpUpTouch else ConnectionType.JumpUp
                                                        {
                                                            Source= a
                                                            Target= b
-                                                           Type=ConnectionType.JumpUp
+                                                           Type= t
                                                            Dist= Cell.dist a b
                                                        })
                                |> Seq.append(
@@ -149,13 +158,23 @@ type Location() =
                                                             Dist = Vector2.dist a.toCenter b.toCenter
                                                         }))
                                |> Seq.append(
-                                   cliffDown |> Seq.map(fun (a,b) ->
+                                   cliffDown |> Array.truncate((Array.length cliffDown) - 1) 
+                                             |> Seq.map(fun (a,b) ->
                                                            {
                                                               Source=a
                                                               Target=b
                                                               Type=ConnectionType.JumpDown
                                                               Dist=Cell.dist a b 
                                                            }))
+                               |> Seq.append(
+                                    cliffDown |> Array.skip((Array.length cliffDown) - 1)  
+                                              |> Seq.map(fun (a,b) ->
+                                                  {
+                                                     Source=a
+                                                     Target=b
+                                                     Type=ConnectionType.JumpDownTouch
+                                                     Dist=Cell.dist a b 
+                                                  }))
                                |> Seq.append(
                                    pathsDown |> Seq.map(fun (a,b) -> 
                                                             {
@@ -167,26 +186,26 @@ type Location() =
                                |> Seq.append(
                                    pathsGround |> Seq.map(fun (a,b) ->
                                                        seq {
-                                                               let ca, cb = Cell.fromVector a, Cell.fromVector b
-                                                               if tiles.[ca.X].[ca.Y] <> Tile.JumpPad then
                                                                    yield {
-                                                                               Source=ca
-                                                                               Target=Cell.fromVector b
-                                                                               Type=ConnectionType.Walk
-                                                                               Dist = 1.0f 
-                                                                           }
-                                                               if tiles.[cb.X].[cb.Y] <> Tile.JumpPad then
+                                                                        Source=a
+                                                                        Target=b
+                                                                        Type=ConnectionType.Walk
+                                                                        Dist = 1.0f 
+                                                                    }                                                               
                                                                    yield {
-                                                                       Source=cb
-                                                                       Target=Cell.fromVector a
+                                                                       Source=b
+                                                                       Target=a
                                                                        Type=ConnectionType.Walk
                                                                        Dist = 1.0f 
                                                                    }
                                                            })
                                                 |> Seq.collect(fun x -> x))
                                |> Seq.filter(fun l -> tiles.[l.Source.X].[l.Source.Y] <> Tile.JumpPad || l.Type = ConnectionType.JumpPad)
-                               |> Seq.groupBy(fun l -> l.Source)
-                               |> Map.ofSeq
+
+       member this.BuildMaskedMap (mask:array<Cell>) =
+            this.BasePathMap |> Seq.filter(fun x -> not (mask |> Array.contains(x.Target)))
+                             |> Seq.groupBy(fun l -> l.Source)
+                             |> Map.ofSeq
 
        /// A method to populate map with static items like walls, ladder, etc
        member this.Parse tiles =
@@ -217,8 +236,8 @@ type Location() =
                                                         new ZoneJumpPad(x.Cell, {X=int trace.X; Y = int trace.Y}))
                                       |> Array.ofSeq
                                
-               let g = this.Grounds |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Ground x))) 
-               let l = this.Ladders |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Ladder x))) 
-               let p = this.Platforms |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Platform x))) 
+               //let g = this.Grounds |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Ground x))) 
+               //let l = this.Ladders |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Ladder x))) 
+               //let p = this.Platforms |> Seq.collect(fun x -> x.Cells |> Seq.map(fun c -> (c, Zones.Zone.Platform x))) 
                
                parsed <- true

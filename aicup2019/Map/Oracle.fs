@@ -5,11 +5,12 @@ open AiCup2019.Model
 open Robocop.Core
 open Robocop.Utils
 
-type TraceParams = {Source: Vector2; BulletSpeed: single; Direction: Vector2; Spread: single; Count: int;}
+type TraceParams = {Source: Vector2; BulletSpeed: single; BulletSize: single; Direction: Vector2; Spread: single; Count: int;}
 type TargetParams = {Pos: Vector2; Direction: Vector2}
 
 module Oracle =
     let traceFuture (game: Game) (trace: TraceParams) (target: TargetParams) =
+        let bulletHalf = trace.BulletSize / 2.0f
         let tiles = game.Level.Tiles 
 
         let bulletDiscretion = 10
@@ -22,7 +23,10 @@ module Oracle =
         let unitMove = target.Direction / single bulletDiscretion
                         
         let checkWallHit (pos:Vector2) = 
-            tiles.[int pos.X].[int pos.Y] = Tile.Wall
+            tiles.[int (pos.X - bulletHalf)].[int (pos.Y + bulletHalf)] = Tile.Wall ||
+            tiles.[int (pos.X + bulletHalf)].[int (pos.Y - bulletHalf)] = Tile.Wall ||
+            tiles.[int (pos.X - bulletHalf)].[int (pos.Y - bulletHalf)] = Tile.Wall ||
+            tiles.[int (pos.X + trace.BulletSize)].[int (pos.Y + bulletHalf)] = Tile.Wall
         
 
         let minX, maxX = (0, tiles.Length)

@@ -22,7 +22,7 @@ type Armory(game: Game) =
 
     member _.SelectWeapon dist =
         let wpn = freeWeapons |> Array.sortBy(fun (pos,t) -> Pathfinder.findDistance dist (Cell.fromVector pos) - Marksman.WeaponPreference(t))
-                              |> Seq.tryFind(fun _ -> true)
+                              |> Seq.tryHead
         if wpn.IsSome then
             freeWeapons <- freeWeapons |> Array.filter(fun (pos,_) -> pos <> fst wpn.Value)
 
@@ -40,5 +40,6 @@ type Armory(game: Game) =
 
     member _.HasMines = freeMines.Length > 0
 
-    member _.HasMine mine = freeMines |> Array.contains(mine)
+    member _.HasMine (mine:Vec2Double) = freeMines |> Array.map(Cell.fromVector) |> Array.contains(Cell.fromVector(mine))
+    member _.HasWeapon (w:Vec2Double) = freeWeapons |> Array.map(fun (pos, _) -> Cell.fromVector pos) |> Array.contains(Cell.fromVector(w))
 

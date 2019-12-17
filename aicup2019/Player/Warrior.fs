@@ -4,8 +4,9 @@ open AiCup2019.Model
 open Robocop.Map
 open System.Numerics
 open Robocop.Utils
+open Robocop.Core
 
-type Warrior(armory: Armory, props: Properties, initialState: Unit) =
+type Warrior(armory: Armory, props: Properties, me: Unit, id: int) =
     let marksman = new Marksman(props)
     let mutable pathfind: Map<Cell,Cell> = Map.empty  
     let mutable distMap: Map<Cell,single> = Map.empty
@@ -19,24 +20,40 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
         if startPos.IsNone then
             startPos <- Some unit.Position
 
-        printfn "Warrior %A turn" initialState.Id
+        printfn "Warrior %A turn" me.Id
 
-        let (shoot, aim) = Diag.elapsed "Marskman calc" (fun () -> marksman.TurnParse game unit)
+        let (shoot, aim, reload) = Diag.elapsed "Marskman calc" (fun () -> marksman.TurnParse game unit)
 
-        let tiles = game.Level.Tiles
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
-        let myCell = Cell.fromVector unit.Position              
+        let myCell = Cell.fromVector unit.Position
+        
+        let mask = game.Units 
+                        |> Array.filter(fun u -> u.Id <> me.Id) 
+                        |> Array.filter(fun u -> Vector2.Distance(Vector2.fromVec2Double me.Position, Vector2.fromVec2Double u.Position) < 4.0f)
+                        |> Array.map(fun u -> let p = Cell.fromVector u.Position
+                                              [|p; p.up|])
+                        |> Array.collect(fun x -> x)
+                        |> Array.append (game.Mines |> Array.map(fun x -> (Cell.fromVector x.Position)))
+
+        let tempMap = location.BuildMaskedMap mask
+
+        let jumpLeft = if (unit.OnGround || unit.OnLadder) then Constants.Max_Jump else (single unit.JumpState.MaxTime) * Constants.Max_Speed
           
-        if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
-            Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra location.BasePathMap (Cell.fromVector unit.Position)
-                                                 match fst newPath |> Seq.isEmpty with
-                                                        | false -> pathfind <- fst newPath
-                                                                   distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
-                                                        | _ -> ignore())
+        Logger.drawText(sprintf "jumpLeft %A" jumpLeft)
+
+        //if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
+        Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
+                                             match fst newPath |> Seq.isEmpty with
+                                                | false -> pathfind <- fst newPath
+                                                           distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
+                                                | _ -> ignore())
 
         if unit.Weapon.IsNone then
             if targetWeapon.IsNone then
                 targetWeapon <- armory.SelectWeapon(distMap)
+            else                
+                if not (armory.HasWeapon targetWeapon.Value) then
+                     targetWeapon <- armory.SelectWeapon(distMap)
         else
             targetWeapon <- None
 
@@ -86,8 +103,10 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
         if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
             path <- newPath
             nextStep <- 1
+        
 
-        path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter Palette.HotPink)
+        let color = if id = 0 then Palette.HotPink else Palette.LawnGreen
+        path |> Seq.pairwise  |> Seq.iter  (fun (a,b) -> Logger.drawLine a.toCenter b.toCenter color)
 
         let nextTile = match path.Length with
                              | 1 -> path |> Seq.head
@@ -104,5 +123,5 @@ type Warrior(armory: Armory, props: Properties, initialState: Unit) =
             Shoot = shoot
             SwapWeapon = false
             PlantMine = plantMine
-            Reload = false
+            Reload = reload
         }

@@ -11,7 +11,7 @@ module Pathfinder =
     let infDist = {Dist=infinityf; Prev=ConnectionType.Walk; JumpLeft = 0.0f}
     // todo rewrite in F# style
     // [PERF] use sorted queue for better performace
-    let dijkstra (graph:Map<Cell,seq<Link>>) source =
+    let dijkstra (graph:Map<Cell,seq<Link>>) source jumpLeft =
         let dist: Dictionary<Cell, DistInfo> = new Dictionary<Cell, DistInfo>()
         let prev: Dictionary<Cell, Option<Cell>> = new Dictionary<Cell, Option<Cell>>()
         let q: Dictionary<Cell, array<Link>> =  Dictionary<Cell, array<Link>>()
@@ -21,7 +21,7 @@ module Pathfinder =
                                     prev.[k] <- None
                                     q.[k] <- (v |> Array.ofSeq))
 
-        dist.[source] <- {Dist=0.0f; Prev=ConnectionType.Walk; JumpLeft = Constants.Max_Jump}
+        dist.[source] <- {Dist=0.0f; Prev=ConnectionType.Walk; JumpLeft = jumpLeft}
         while q.Any() do
             let u = q.OrderBy(fun x -> dist.[x.Key])
                      .First()
@@ -41,6 +41,7 @@ module Pathfinder =
                                                 JumpLeft= match link.Type with
                                                                 | ConnectionType.JumpUp -> curr.JumpLeft - link.Dist
                                                                 | ConnectionType.Walk -> Constants.Max_Jump
+                                                                | ConnectionType.JumpUpTouch -> Constants.Max_Jump
                                                                 | _ -> 0.0f}
                         prev.[link.Target] <- Some u.Key
 
@@ -50,6 +51,9 @@ module Pathfinder =
                         |> Map.ofSeq
         let distMap = dist |> Seq.map (fun kv -> (kv.Key, kv.Value))
                            |> Map.ofSeq
+
+        dist |> Seq.choose(fun kv -> match kv.Value.Dist <> infinityf with true -> Some kv.Key | _ -> None)
+             |> Seq.iter (fun x -> Logger.cellHighlight x.toCenter Palette.Blue)
         (path, distMap)
 
     let findPath (graph: Map<Cell,Cell>) source target =

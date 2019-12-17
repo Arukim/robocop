@@ -23,6 +23,7 @@ type Marksman(props: Properties) =
         let traceParams  = {
             Source = unitPos 
             BulletSpeed = single weapon.Parameters.Bullet.Speed / (single props.TicksPerSecond)
+            BulletSize = single weapon.Parameters.Bullet.Size
             Direction = direction
             Spread = single weapon.Spread
             Count = 100}
@@ -34,6 +35,7 @@ type Marksman(props: Properties) =
         let trace360Params = {
             Source = unitPos
             BulletSpeed = single weapon.Parameters.Bullet.Speed / (single props.TicksPerSecond)
+            BulletSize = single weapon.Parameters.Bullet.Size
             Direction = Vector2.UnitY
             Spread = single System.Math.PI * 2.0f
             Count = 360
@@ -62,9 +64,12 @@ type Marksman(props: Properties) =
             | None _ -> ignore()
 
         let mutable shoot = false
+        let mutable reload = false
         let mutable angle = {X=0.0; Y=0.0}:Vec2Double
         if nearestEnemy.IsSome && myWeapon.IsSome then
             let weapon = myWeapon.Value
+
+            
             let hits, hits360 = predictPos game unit nearestEnemy.Value myWeapon.Value 
             let lastAngle = match weapon.LastAngle with
                             | Some a -> {X=cos a; Y= sin a}:Vec2Double
@@ -76,6 +81,7 @@ type Marksman(props: Properties) =
                                 | WeaponType.RocketLauncher -> 90
                                 | _ -> 90
             shoot <- hits |> Array.length > hitRate && weapon.FireTimer.IsNone
+                       
             angle <- match not (hits360 |> Array.isEmpty) && not shoot with
                         | true -> let avgX = double (hits360 |> Array.averageBy(fun (_,x) -> x.X))
                                   let avgY = double (hits360 |> Array.averageBy(fun (_,x) -> x.Y))
@@ -84,10 +90,13 @@ type Marksman(props: Properties) =
                                   Logger.drawLine a n Palette.LawnGreen
                                   {X = avgX * 50.0; Y= avgY * 50.0}:Vec2Double
                         | _ -> lastAngle
+            if hits360 |> Array.isEmpty then
+                if weapon.Magazine < weapon.Parameters.MagazineSize then
+                    reload <- true
     
-    
-            Logger.drawText(sprintf "Hits %A, Hits360 %A, shoot %A" (hits |> Seq.length) (hits360 |> Seq.length) shoot)
-
-        (shoot, angle)
+            //Logger.drawText(sprintf "Hits %A, Hits360 %A, shoot %A" (hits |> Seq.length) (hits360 |> Seq.length) shoot)
+        
+        Logger.drawText(sprintf "Shoot %A, Angle %A, Relod %A" shoot angle reload)
+        (shoot, angle, reload)
 
 

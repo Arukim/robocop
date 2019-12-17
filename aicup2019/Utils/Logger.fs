@@ -32,7 +32,7 @@ type Logger() =
                                     P1 = {X = source.X; Y = source.Y}
                                     P2 = {X = target.X; Y = target.Y}
                                     Width = 0.05f
-                                    Color = ColorSingle.from 1.0f color
+                                    Color = ColorSingle.from 0.5f color
                                     })
         | _ -> ignore()
 

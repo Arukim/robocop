@@ -21,7 +21,6 @@ module Controller =
 
         let (jump, jumpDown) = checkJump
 
-        Logger.drawText(sprintf "From %A to %A jump %A jumpDown %A" source tgt jump jumpDown)
         Logger.cellHighlight tgt.toCenter Palette.GreenYellow
         // slow down near tgt??
         let dir = match target.X - source.X with
