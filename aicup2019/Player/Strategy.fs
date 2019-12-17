@@ -38,6 +38,7 @@ type Strategy(game: Game, myTeam: int) =
         if lastCalculatedTick <> game.CurrentTick then
             calcTick game.Level.Tiles
             lastCalculatedTick <- game.CurrentTick
+            armory.Sync game
 
     member _.DoTurn(unit: Unit, game: Game) =
         let msg = sprintf "Warrior %A turn" unit.Id

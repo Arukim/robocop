@@ -6,7 +6,7 @@ open System.Numerics
 open Robocop.Utils
 open Robocop.Core
 
-type Warrior(armory: Armory, props: Properties, me: Unit, id: int) =
+type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
     let marksman = new Marksman(props)
     let mutable pathfind: Map<Cell,Cell> = Map.empty  
     let mutable distMap: Map<Cell,single> = Map.empty
@@ -19,17 +19,15 @@ type Warrior(armory: Armory, props: Properties, me: Unit, id: int) =
     member _.DoTurn (unit:Unit) (game:Game) (location:Location) =        
         if startPos.IsNone then
             startPos <- Some unit.Position
-
-        printfn "Warrior %A turn" me.Id
-
+            
         let (shoot, aim, reload) = Diag.elapsed "Marskman calc" (fun () -> marksman.TurnParse game unit)
 
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
         let myCell = Cell.fromVector unit.Position
         
         let mask = game.Units 
-                        |> Array.filter(fun u -> u.Id <> me.Id) 
-                        |> Array.filter(fun u -> Vector2.Distance(Vector2.fromVec2Double me.Position, Vector2.fromVec2Double u.Position) < 4.0f)
+                        |> Array.filter(fun u -> u.Id <> initial.Id) 
+                        |> Array.filter(fun u -> Vector2.Distance(Vector2.fromVec2Double unit.Position, Vector2.fromVec2Double u.Position) < 4.0f)
                         |> Array.map(fun u -> let p = Cell.fromVector u.Position
                                               [|p; p.up|])
                         |> Array.collect(fun x -> x)

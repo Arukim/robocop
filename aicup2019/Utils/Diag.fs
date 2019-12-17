@@ -10,3 +10,10 @@ module Diag =
 #endif
         returnValue
 
+    let elapsedRelease msg f = 
+        let timer = new System.Diagnostics.Stopwatch()
+        timer.Start()
+        let returnValue = f()
+        printfn "%s elapsed Time: %i ms " msg timer.ElapsedMilliseconds
+        returnValue
+

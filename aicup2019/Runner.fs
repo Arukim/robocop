@@ -3,6 +3,7 @@ namespace AiCup2019
 open System
 open System.IO;
 open System.Net.Sockets;
+open Robocop.Utils
 
 module Runner =
     type T(host, port, token: string) =
@@ -27,12 +28,13 @@ module Runner =
                 
                 match message.PlayerView with
                     | Some playerView ->
-                        let actions = playerView.Game.Units 
-                                                |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
-                                                |> Array.map(fun x -> 
-                                                    (x.Id, myStrategy.getAction(x, playerView.Game, debug))) 
-                                                |> Map.ofArray                                                       
-                        (Model.PlayerMessageGame.ActionMessage {Action = {Inner = actions}}).writeTo writer
+                        Diag.elapsedRelease "making turn" (fun () ->
+                            let actions = playerView.Game.Units 
+                                                    |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
+                                                    |> Array.map(fun x -> 
+                                                        (x.Id, myStrategy.getAction(x, playerView.Game, debug))) 
+                                                    |> Map.ofArray                                                       
+                            (Model.PlayerMessageGame.ActionMessage {Action = {Inner = actions}}).writeTo writer)                        
                         writer.Flush()
                         loop()
                     | None -> ()
