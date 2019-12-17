@@ -16,11 +16,13 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
     let mutable targetWeapon: Option<Vec2Double> = None
     let mutable targetMine: Option<Vec2Double> = None
 
-    member _.DoTurn (unit:Unit) (game:Game) (location:Location) =        
+    member _.DoTurn (unit:Unit) (game:Game) (location:Location) =   
+        let nextLeg myPos = 
+            path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f
         if startPos.IsNone then
             startPos <- Some unit.Position
             
-        let (shoot, aim, reload) = Diag.elapsed "Marskman calc" (fun () -> marksman.TurnParse game unit)
+        let (shoot, aim, reload) = Diag.elapsedRelease "Marskman calc" (fun () -> marksman.TurnParse game unit)
 
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
         let myCell = Cell.fromVector unit.Position
@@ -33,18 +35,18 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
                         |> Array.collect(fun x -> x)
                         |> Array.append (game.Mines |> Array.map(fun x -> (Cell.fromVector x.Position)))
 
-        let tempMap = location.BuildMaskedMap mask
+        let tempMap = Diag.elapsedRelease "Build map" (fun () -> location.BuildMaskedMap mask)
 
         let jumpLeft = if (unit.OnGround || unit.OnLadder) then Constants.Max_Jump else (single unit.JumpState.MaxTime) * Constants.Max_Speed
           
         Logger.drawText(sprintf "jumpLeft %A" jumpLeft)
 
-        //if unit.OnGround  || unit.OnLadder || unit.JumpState.MaxTime = 0.0 then
-        Diag.elapsed "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
-                                             match fst newPath |> Seq.isEmpty with
-                                                | false -> pathfind <- fst newPath
-                                                           distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
-                                                | _ -> ignore())
+        if (game.CurrentTick % 2 = 0) then
+            Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
+                                                        match fst newPath |> Seq.isEmpty with
+                                                            | false -> pathfind <- fst newPath
+                                                                       distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
+                                                            | _ -> ignore())
 
         if unit.Weapon.IsNone then
             if targetWeapon.IsNone then
@@ -91,12 +93,12 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
 
         let mutable plantMine = false
         //targetPos <- {X=15.0;Y=26.0}
-        if path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f then 
+        if nextLeg myPos then 
             nextStep <- nextStep + 1
                
         if targetPos = startPos.Value then plantMine <- true
 
-        let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
+        let newPath = Diag.elapsedRelease "find path" (fun () -> Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq)
 
         if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
             path <- newPath

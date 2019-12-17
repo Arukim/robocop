@@ -26,7 +26,7 @@ type Strategy(game: Game, myTeam: int) =
 
     let cleanPathMap() =
         let (_, dist) = Pathfinder.dijkstra (location.BuildMaskedMap Array.empty) (Cell.fromVector game.Units.[0].Position) (Constants.Max_Jump * 2.0f)
-        location.BasePathMap <- location.BasePathMap |> Seq.filter(fun l -> dist.[l.Source].Dist <> infinityf)
+        location.BasePathMap <- location.BasePathMap |> Array.filter(fun l -> dist.[l.Source].Dist <> infinityf)
         ignore()
 
     member _.Init() = 
@@ -45,4 +45,4 @@ type Strategy(game: Game, myTeam: int) =
 
         let warrior = warriors.[unit.Id]
 
-        Diag.elapsed msg (fun () -> warrior.DoTurn unit game location)
+        Diag.elapsedRelease msg (fun () -> warrior.DoTurn unit game location)

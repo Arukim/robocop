@@ -25,7 +25,7 @@ type Location() =
        let jumpPads = Array.empty<ZoneJumpPad>
        let mutable parsed = false
 
-       member val BasePathMap = Seq.empty with get,set
+       member val BasePathMap = Array.empty with get,set
        member val Grounds : ZoneGround[] = grounds with get, set
        member val Ladders : ZoneLadder[] = ladders with get, set
        member val Platforms : ZonePlatform[] = platforms with get, set
@@ -201,10 +201,11 @@ type Location() =
                                                            })
                                                 |> Seq.collect(fun x -> x))
                                |> Seq.filter(fun l -> tiles.[l.Source.X].[l.Source.Y] <> Tile.JumpPad || l.Type = ConnectionType.JumpPad)
+                               |> Array.ofSeq
 
        member this.BuildMaskedMap (mask:array<Cell>) =
-            this.BasePathMap |> Seq.filter(fun x -> not (mask |> Array.contains(x.Target)))
-                             |> Seq.groupBy(fun l -> l.Source)
+            this.BasePathMap |> Array.filter(fun x -> not (mask |> Array.contains(x.Target)))
+                             |> Array.groupBy(fun l -> l.Source)
                              |> Map.ofSeq
 
        /// A method to populate map with static items like walls, ladder, etc

@@ -11,7 +11,7 @@ module Pathfinder =
     let infDist = {Dist=infinityf; Prev=ConnectionType.Walk; JumpLeft = 0.0f}
     // todo rewrite in F# style
     // [PERF] use sorted queue for better performace
-    let dijkstra (graph:Map<Cell,seq<Link>>) source jumpLeft =
+    let dijkstra (graph:Map<Cell,array<Link>>) source jumpLeft =
         let dist: Dictionary<Cell, DistInfo> = new Dictionary<Cell, DistInfo>()
         let prev: Dictionary<Cell, Option<Cell>> = new Dictionary<Cell, Option<Cell>>()
         let q: Dictionary<Cell, array<Link>> =  Dictionary<Cell, array<Link>>()
@@ -19,11 +19,11 @@ module Pathfinder =
         graph |> Map.iter (fun k v -> 
                                     dist.[k] <- infDist
                                     prev.[k] <- None
-                                    q.[k] <- (v |> Array.ofSeq))
+                                    q.[k] <- v)
 
         dist.[source] <- {Dist=0.0f; Prev=ConnectionType.Walk; JumpLeft = jumpLeft}
         while q.Any() do
-            let u = q.OrderBy(fun x -> dist.[x.Key])
+            let u = q.OrderBy(fun x -> dist.[x.Key].Dist)
                      .First()
 
             q.Remove(u.Key) |> ignore
