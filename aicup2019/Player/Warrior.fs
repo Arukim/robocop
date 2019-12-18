@@ -41,12 +41,11 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
           
         Logger.drawText(sprintf "jumpLeft %A" jumpLeft)
 
-        if (game.CurrentTick % 2 = 0) then
-            Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
-                                                        match fst newPath |> Seq.isEmpty with
-                                                            | false -> pathfind <- fst newPath
-                                                                       distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
-                                                            | _ -> ignore())
+        Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
+                                                    match fst newPath |> Seq.isEmpty with
+                                                        | false -> pathfind <- fst newPath
+                                                                   distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
+                                                        | _ -> ignore())
 
         if unit.Weapon.IsNone then
             if targetWeapon.IsNone then
