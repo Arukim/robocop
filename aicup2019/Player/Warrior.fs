@@ -97,7 +97,7 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
                
         if targetPos = startPos.Value then plantMine <- true
 
-        let newPath = Diag.elapsedRelease "find path" (fun () -> Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq)
+        let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
 
         if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
             path <- newPath
