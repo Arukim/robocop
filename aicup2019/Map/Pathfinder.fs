@@ -28,7 +28,9 @@ module Pathfinder =
                                     prev.[k] <- None)
 
         dist.[source] <- {Dist=0.0f; Prev=ConnectionType.Walk; JumpLeft = jumpLeft}
-        q.Add(0.0f,{Source=source;Links=graph.[source]})
+        
+        if graph.ContainsKey source then
+            q.Add(0.0f,{Source=source;Links=graph.[source]})
 
         while q.Any() do
             q.Sort(fun a b -> cmp (fst a) (fst b))
@@ -70,8 +72,8 @@ module Pathfinder =
         let distMap = dist |> Seq.map (fun kv -> (kv.Key, kv.Value))
                            |> Map.ofSeq
 
-        dist |> Seq.choose(fun kv -> match kv.Value.Dist <> infinityf with true -> Some kv.Key | _ -> None)
-             |> Seq.iter (fun x -> Logger.cellHighlight x.toCenter Palette.Blue)
+        //dist |> Seq.choose(fun kv -> match kv.Value.Dist <> infinityf with true -> Some kv.Key | _ -> None)
+        //     |> Seq.iter (fun x -> Logger.cellHighlight x.toCenter Palette.Blue)
         (path, distMap)
 
     let findPath (graph: Map<Cell,Cell>) source target =

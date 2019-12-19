@@ -6,8 +6,8 @@ open System.Numerics
 open Robocop.Utils
 open Robocop.Core
 
-type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
-    let marksman = new Marksman(props)
+type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit, id: int) =
+    let marksman = new Marksman(unitSim, props)
     let mutable pathfind: Map<Cell,Cell> = Map.empty  
     let mutable distMap: Map<Cell,single> = Map.empty
     let mutable startPos: Option<Vec2Double> = None
@@ -16,7 +16,7 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
     let mutable targetWeapon: Option<Vec2Double> = None
     let mutable targetMine: Option<Vec2Double> = None
 
-    member _.DoTurn (unit:Unit) (game:Game) (location:Location) =   
+    member _.DoTurn (unit:Unit) (game:Game) (location:Location) (evasion:PlayerModel[])=   
         let nextLeg myPos = 
             path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f
         if startPos.IsNone then
@@ -112,7 +112,27 @@ type Warrior(armory: Armory, props: Properties, initial: Unit, id: int) =
                              | x when x > 0 -> path |> Seq.skip nextStep |> Seq.head
                              | _ -> myCell
 
-        let (jump, jumpDown, velocity) = Controller.makeMove game.Level.Tiles unit myCell nextTile
+
+
+        let mutable (jump, jumpDown, velocity) = Controller.makeMove game.Level.Tiles unit myCell nextTile
+
+        if not (evasion |> Array.forall(fun x -> x.DamageReceived = 0)) then
+
+
+            let bestEvasion = snd (evasion 
+                                |> Array.filter(fun x -> unit.JumpState.Speed = 0.0 || (x.Velocity <> Vector2.Zero))
+                                |> Array.groupBy(fun x -> x.DamageReceived)
+                                |> Array.sortBy(fun d -> fst d)
+                                |> Array.head)
+
+            let move = bestEvasion |> Array.sortBy(fun x -> abs ((float x.Velocity.X) - velocity)) |> Array.head
+            let evade = move.Velocity                
+            jump <- evade.Y > 0.0f
+            jumpDown <- evade.Y < 0.0f
+            velocity <- match evade.X with
+                            | 0.0f -> 0.0
+                            | x when x > 0.0f -> 10.0
+                            | _ -> -10.0
 
         {
             Velocity = velocity

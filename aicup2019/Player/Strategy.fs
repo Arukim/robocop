@@ -7,20 +7,24 @@ open Robocop.Core
 
 type Strategy(game: Game, myTeam: int) =
     let location = new Location()
-    let armory = new Armory(game)
+    let armory = new Armory(game)    
+    let unitSim: UnitSim = new UnitSim(game.Properties.MaxTickCount, game.Properties.TeamSize * 2);
     let mutable lastCalculatedTick = -1
     let mutable unitCounter = -1
+    let mutable evasion = [||]
     let warriors = game.Units |> Array.choose(
                                 fun u ->                                     
                                     match u with 
                                             | x when x.PlayerId = myTeam -> 
                                                     unitCounter <- unitCounter + 1
-                                                    Some((x.Id, new Warrior(armory, game.Properties, x, unitCounter)))
+                                                    Some((x.Id, new Warrior(armory, unitSim, game.Properties, x, unitCounter)))
                                             | _ -> None)
                               |> Map.ofArray                                  
 
     let calcTick game = 
         //location.drawPathMap
+        game.Units |> Array.iter(fun x -> unitSim.AddTurn x game.CurrentTick)
+        evasion <- Oracle.traceEvasion Constants.Evasion_Time myTeam game
         ignore()
 
 
@@ -36,7 +40,7 @@ type Strategy(game: Game, myTeam: int) =
 
     member _.PrepareTurn(game: Game) =
         if lastCalculatedTick <> game.CurrentTick then
-            calcTick game.Level.Tiles
+            calcTick game
             lastCalculatedTick <- game.CurrentTick
             armory.Sync game
 
@@ -45,4 +49,4 @@ type Strategy(game: Game, myTeam: int) =
 
         let warrior = warriors.[unit.Id]
 
-        Diag.elapsedRelease msg (fun () -> warrior.DoTurn unit game location)
+        Diag.elapsedRelease msg (fun () -> warrior.DoTurn unit game location (evasion |> Array.filter(fun x -> x.Id = unit.Id)))
