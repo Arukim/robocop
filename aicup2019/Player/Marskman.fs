@@ -56,8 +56,8 @@ type Marksman(unitSim: UnitSim, props: Properties) =
         
     static member WeaponPreference (t: WeaponType) =
         match t with
-            | WeaponType.RocketLauncher -> 0.0f
-            | _ -> 100.0f
+            //| WeaponType.RocketLauncher -> 0.0f
+            | _ -> 0.0f
 
     member _.TurnParse (game:Game) (unit:Unit) =
         let myWeapon = unit.Weapon
