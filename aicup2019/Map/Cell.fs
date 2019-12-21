@@ -34,5 +34,5 @@ type Cell = {X: int; Y: int} with
         {X=int v.X; Y=int v.Y}
 
     static member dist (a:Cell) (b:Cell) =
-        let (va, vb) = (a.toCenter, b.toCenter)
-        Vector2.Distance(va,vb)
+        let dx, dy = abs(a.X - b.X), abs(a.Y - b.Y)
+        single(max dx dy)
