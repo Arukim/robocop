@@ -28,7 +28,7 @@ module Runner =
                 
                 match message.PlayerView with
                     | Some playerView ->
-                        Diag.elapsedRelease "making turn" (fun () ->
+                        Diag.elapsedRelease ">>>>>>>>>>>making turn" (fun () ->
                             let actions = playerView.Game.Units 
                                                     |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
                                                     |> Array.map(fun x -> 

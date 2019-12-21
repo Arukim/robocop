@@ -8,24 +8,28 @@ open Robocop.Core
 
 type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit, id: int) =
     let marksman = new Marksman(unitSim, props)
-    let mutable pathfind: Map<Cell,Cell> = Map.empty  
+    let mutable route: Map<Cell,Cell> = Map.empty  
     let mutable distMap: Map<Cell,single> = Map.empty
     let mutable startPos: Option<Vec2Double> = None
     let mutable path: Cell[] = Array.empty<Cell>
     let mutable nextStep: int = 0
     let mutable targetWeapon: Option<Vec2Double> = None
     let mutable targetMine: Option<Vec2Double> = None
+    let mutable prevCell = {X=0;Y=0}:Cell
 
-    member _.DoTurn (unit:Unit) (game:Game) (location:Location) (evasion:PlayerModel[])=   
+    member _.DoTurn (unit:Unit) (game:Game) (location:Location) (evasion:PlayerModel[])=
         let nextLeg myPos = 
             path.Length - 1 > nextStep && Vector2.dist myPos path.[nextStep].toCenter < 0.1f
         if startPos.IsNone then
             startPos <- Some unit.Position
-            
+
         let (shoot, aim, reload) = Diag.elapsedRelease "Marskman calc" (fun () -> marksman.TurnParse game unit)
 
         let myPos = new Vector2(single unit.Position.X, single unit.Position.Y)
         let myCell = Cell.fromVector unit.Position
+        
+        let cellChanged = prevCell <> myCell
+
         
         let mask = game.Units 
                         |> Array.filter(fun u -> u.Id <> initial.Id) 
@@ -35,17 +39,18 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                         |> Array.collect(fun x -> x)
                         |> Array.append (game.Mines |> Array.map(fun x -> (Cell.fromVector x.Position)))
 
-        let tempMap = Diag.elapsedRelease "Build map" (fun () -> location.BuildMaskedMap mask)
 
-        let jumpLeft = if (unit.OnGround || unit.OnLadder) then Constants.Max_Jump else (single unit.JumpState.MaxTime) * Constants.Max_Speed
+
+        if cellChanged || (route |> Seq.isEmpty) then
+            let tempMap = Diag.elapsedRelease "Build map" (fun () -> location.BuildMaskedMap mask)
+
+            let jumpTimeLeft = if (unit.OnGround || unit.OnLadder) then Constants.Max_Jump else (single unit.JumpState.MaxTime) * Constants.Max_Speed
           
-        Logger.drawText(sprintf "jumpLeft %A" jumpLeft)
-
-        Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpLeft
-                                                    match fst newPath |> Seq.isEmpty with
-                                                        | false -> pathfind <- fst newPath
-                                                                   distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
-                                                        | _ -> ignore())
+            Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpTimeLeft
+                                                        match fst newPath |> Seq.isEmpty with
+                                                            | false -> route <- fst newPath
+                                                                       distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
+                                                            | _ -> ignore())
 
         if unit.Weapon.IsNone then
             if targetWeapon.IsNone then
@@ -97,7 +102,7 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                
         if targetPos = startPos.Value then plantMine <- true
 
-        let newPath = Pathfinder.findPath pathfind myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
+        let newPath = Pathfinder.findPath route myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
 
         if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
             path <- newPath
@@ -133,6 +138,9 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                             | 0.0f -> 0.0
                             | x when x > 0.0f -> 10.0
                             | _ -> -10.0
+
+        
+        if cellChanged then prevCell <- myCell
 
         {
             Velocity = velocity

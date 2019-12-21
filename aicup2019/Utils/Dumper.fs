@@ -6,6 +6,7 @@ open System.IO
 
 module Dumper =
     let dumpGameMap (game: Game) = 
+ #if DEBUG
         let dump = game.Level.Tiles 
                     |> Matrices.rotateConterClockwise
                     |> Seq.map(fun row -> 
@@ -30,3 +31,6 @@ module Dumper =
         if File.Exists name then Console.WriteLine "!!!!!!!!!!!!repeat!!!!!!!!!!!!!"
 
         File.WriteAllLines (name, dump)
+#else
+    ignore()
+#endif

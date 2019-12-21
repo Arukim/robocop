@@ -37,6 +37,7 @@ type Strategy(game: Game, myTeam: int) =
         Diag.elapsed "Location init" (fun () -> location.Parse game.Level.Tiles)
         Diag.elapsed "Base path map" (fun () -> location.buildBasePathMap game.Level.Tiles)
         Diag.elapsed "Clean path map" (fun () -> cleanPathMap())
+        Dumper.dumpGameMap(game)
 
     member _.PrepareTurn(game: Game) =
         if lastCalculatedTick <> game.CurrentTick then
