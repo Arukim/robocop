@@ -26,14 +26,22 @@ type Location() =
 
        member this.JumpDownParse (tiles:Tile[][]) =      
             let getDowns (cell:Cell) =
-                let (left, down, right) = cell.down.left, cell.down, cell.down.right
+                let (downLeft, down, downRight) = cell.down.left, cell.down, cell.down.right
                 seq {
                     if down.Y >= 0 && tiles.[down.X].[down.Y] = Tile.Empty then
                         yield (cell, down)
-                        if left.X >= 0 && tiles.[left.X].[left.Y] = Tile.Empty then
-                            yield (cell, left)                            
-                        if right.Y < tiles.Length && tiles.[right.X].[right.Y] = Tile.Empty then
-                            yield (cell, right)
+                        let (left, right) = cell.left, cell.right
+                        let (upLeft, upRight) = cell.up.left, cell.up.right
+                        if downLeft.X >= 0 
+                            && tiles.[downLeft.X].[downLeft.Y] = Tile.Empty 
+                            && tiles.[left.X].[left.Y] = Tile.Empty
+                            && tiles.[upLeft.X].[upLeft.Y] = Tile.Empty
+                        then yield (cell, downLeft)                            
+                        if downRight.Y < tiles.Length 
+                            && tiles.[downRight.X].[downRight.Y] = Tile.Empty
+                            && tiles.[right.X].[right.Y] = Tile.Empty
+                            && tiles.[upRight.X].[upRight.Y] = Tile.Empty
+                        then yield (cell, downRight)
                 }            
             
             let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable |> Seq.skip 1)
@@ -50,17 +58,22 @@ type Location() =
     
         member this.JumpUpParse (tiles:Tile[][]) =  
             let getUps (cell:Cell) =
-                let (left, up, right) = cell.up.left, cell.up, cell.up.right
+                let (upLeft, up, upRight) = cell.up.left, cell.up, cell.up.right
                 let upUp = up.up
                 seq {
                     if up.Y < tiles.Length - 1 
                         && tiles.[up.X].[up.Y] <> Tile.Wall 
                         && tiles.[upUp.X].[upUp.Y] <> Tile.Wall then
                             yield (cell, up)
-                            if left.X >= 0 && tiles.[left.X].[left.Y] <> Tile.Wall  then
-                                yield (cell, left)                            
-                            if right.Y < tiles.Length && tiles.[right.X].[right.Y] <> Tile.Wall then
-                                yield (cell, right)
+                            let (upUpLeft, upUpRight) = upUp.left, upUp.right
+                            if upLeft.X >= 0 
+                                && tiles.[upLeft.X].[upLeft.Y] <> Tile.Wall 
+                                && tiles.[upUpLeft.X].[upUpLeft.Y] <> Tile.Wall 
+                            then yield (cell, upLeft)                            
+                            if upRight.Y < tiles.Length 
+                                && tiles.[upRight.X].[upRight.Y] <> Tile.Wall 
+                                && tiles.[upUpRight.X].[upUpRight.Y] <> Tile.Wall 
+                            then yield (cell, upRight)
                 } 
                          
             tiles |> Matrices.allTilesG genCell
@@ -112,21 +125,17 @@ type Location() =
             this.JumpPads |> Seq.map(fun x -> x.Cell, x.TargetCell)            
 
        member this.drawPathMap =
-            //ignore()
-            this.BasePathMap |> Map.iter(
-                                fun _ b -> b |> Seq.iter(fun link -> 
-                                                            let color = match link.Type with
-                                                                            | ConnectionType.JumpDown -> Palette.DarkSlateBlue
-                                                                            | ConnectionType.JumpUp -> Palette.LightSeaGreen
-                                                                            | ConnectionType.JumpUpTouch -> Palette.DarkOliveGreen
-                                                                            | ConnectionType.JumpPad -> Palette.GreenYellow
-                                                                            | ConnectionType.Walk -> Palette.CornflowerBlue
-                                                                            | ConnectionType.JumpDownTouch -> Palette.RoyalBlue
-                                                            Logger.drawLine link.Source.toCenter link.Target.toCenter color
-                                                            )
-                                    
-                                    
-                                    )
+            ignore()
+            //this.BasePathMap |> Array.iter(fun link -> 
+            //                                            let color = match link.Type with
+            //                                                            | ConnectionType.JumpDown -> Palette.DarkSlateBlue
+            //                                                            | ConnectionType.JumpUp -> Palette.LightSeaGreen
+            //                                                            | ConnectionType.JumpUpTouch -> Palette.DarkOliveGreen
+            //                                                            | ConnectionType.JumpPad -> Palette.GreenYellow
+            //                                                            | ConnectionType.Walk -> Palette.CornflowerBlue
+            //                                                            | ConnectionType.JumpDownTouch -> Palette.RoyalBlue
+            //                                            Logger.drawLine link.Source.toCenter link.Target.toCenter color
+            //                                            )
 
        member this.buildBasePathMap (tiles:Tile[][]) =
            let pathsUp = tiles |> this.JumpUpParse

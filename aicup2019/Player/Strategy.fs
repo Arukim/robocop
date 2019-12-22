@@ -22,7 +22,7 @@ type Strategy(game: Game, myTeam: int) =
                               |> Map.ofArray                                  
 
     let calcTick game = 
-        //location.drawPathMap
+        location.drawPathMap
         game.Units |> Array.iter(fun x -> unitSim.AddTurn x game.CurrentTick)
         evasion <- Oracle.traceEvasion Constants.Evasion_Time myTeam game
         ignore()
