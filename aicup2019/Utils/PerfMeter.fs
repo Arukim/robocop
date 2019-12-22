@@ -37,6 +37,6 @@ type PerfMeter =
     member this.Summarize () = 
         let avg = float this.sw.ElapsedMilliseconds / float this.eventsCount
         let dur = this.sw.ElapsedMilliseconds
-        sprintf "%s avg: %.2fms min: %Ams max %Ams dur: %Ams events: %Ams" this.metricsName avg this.min this.max dur this.eventsCount
+        sprintf "%s avg: %.2fms min: %Ams max %Ams dur: %A events: %A" this.metricsName avg this.min this.max dur this.eventsCount
         
 
