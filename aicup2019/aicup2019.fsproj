@@ -39,6 +39,7 @@
     <Compile Include="Utils\Palette.fs" />
     <Compile Include="Utils\ColorSingleExt.fs" />
     <Compile Include="Utils\Logger.fs" />
+    <Compile Include="Utils\PerfMeter.fs" />
     <Compile Include="Utils\Diag.fs" />
     <Compile Include="Utils\Seq.fs" />
     <Compile Include="Utils\Vector2.fs" />

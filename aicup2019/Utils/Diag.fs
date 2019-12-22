@@ -17,6 +17,3 @@ module Diag =
         printfn "%s elapsed Time: %i ms " msg timer.ElapsedMilliseconds
         returnValue
 
-    let traceAvg msg f =
-        ignore()
-

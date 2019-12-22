@@ -12,6 +12,7 @@ module Runner =
         let reader = new BinaryReader(stream)
         let writer = new BinaryWriter(stream)
         let tokenData = System.Text.Encoding.UTF8.GetBytes token
+
         do 
             client.NoDelay <- true
             writer.Write tokenData.Length
@@ -22,12 +23,14 @@ module Runner =
             let myStrategy = new MyStrategy()
             let debug = new Debug(writer)
             Robocop.Utils.Logger.Debug <- Some debug
-
+            let perfMeter = new PerfMeter("turn", 1)
+           
             let rec loop() = 
                 let message = Model.ServerMessageGame.readFrom reader
                 
                 match message.PlayerView with
                     | Some playerView ->
+                        perfMeter.Start()
                         Diag.elapsedRelease ">>>>>>>>>>>making turn" (fun () ->
                             let actions = playerView.Game.Units 
                                                     |> Array.filter(fun x -> x.PlayerId = playerView.MyId)
@@ -36,10 +39,14 @@ module Runner =
                                                     |> Map.ofArray                                                       
                             (Model.PlayerMessageGame.ActionMessage {Action = {Inner = actions}}).writeTo writer)                        
                         writer.Flush()
+                        perfMeter.Stop()
                         loop()
                     | None -> ()
-
-            loop()
+            
+            try
+                loop()
+            finally
+                Console.WriteLine(perfMeter.Summarize())
 
     [<EntryPoint>]
     let main argv =
