@@ -20,6 +20,7 @@ module Runner =
             writer.Flush()
 
         member this.run =
+            printfn "Env has %i cores" System.Environment.ProcessorCount
             let myStrategy = new MyStrategy()
             let debug = new Debug(writer)
             Robocop.Utils.Logger.Debug <- Some debug
