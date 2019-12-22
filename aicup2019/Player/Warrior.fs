@@ -8,7 +8,7 @@ open Robocop.Core
 
 type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit, id: int) =
     let marksman = new Marksman(unitSim, props)
-    let mutable route: Map<Cell,Cell> = Map.empty  
+    let mutable routeMap: Map<Cell,Cell> = Map.empty  
     let mutable distMap: Map<Cell,single> = Map.empty
     let mutable startPos: Option<Vec2Double> = None
     let mutable path: Cell[] = Array.empty<Cell>
@@ -41,14 +41,14 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
 
 
 
-        if cellChanged || (route |> Seq.isEmpty) then
+        if cellChanged || (path |> Seq.isEmpty) then
             let tempMap = Diag.elapsedRelease "Build map" (fun () -> location.BuildMaskedMap mask)
 
             let jumpTimeLeft = if (unit.OnGround || unit.OnLadder) then Constants.Max_Jump else (single unit.JumpState.MaxTime) * Constants.Max_Speed
           
             Diag.elapsedRelease "Path graph" (fun () -> let newPath = Pathfinder.dijkstra tempMap (Cell.fromVector unit.Position) jumpTimeLeft
                                                         match fst newPath |> Seq.isEmpty with
-                                                            | false -> route <- fst newPath
+                                                            | false -> routeMap <- fst newPath
                                                                        distMap <- (snd newPath) |> Map.map(fun k v -> v.Dist)
                                                             | _ -> ignore())
 
@@ -102,7 +102,7 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                
         if targetPos = startPos.Value then plantMine <- true
 
-        let newPath = Pathfinder.findPath route myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
+        let newPath = Pathfinder.findPath routeMap myCell (Cell.fromVector targetPos) |> Seq.rev |> Array.ofSeq
 
         if newPath <> path && path |> Array.skip (nextStep - 1) <> newPath then
             path <- newPath
