@@ -4,10 +4,17 @@ open System.Numerics
 open AiCup2019.Model
 open Robocop.Core
 open Robocop.Utils
+open System
 
 type TraceParams = {Source: Vector2; BulletSpeed: single; BulletSize: single; BulletExplosionRadius: single;
                     Direction: Vector2; Spread: single; Count: int;}
 type TargetParams = {Pos: Vector2; Direction: Vector2; ComradPos: Vector2; ComradDirection: Vector2}
+
+[<Flags>]
+type DamageType =
+    | Miss        = 0b0000000
+    | Hit         = 0b0000001
+    | Explosion   = 0b0000010
 
 type SimModel = 
     val mutable Pos: Vector2
@@ -23,14 +30,16 @@ type BulletModel =
     
     val Size: single
     val Damage: int
-    new(id, pos, vel, size, dmg) = {inherit SimModel(id, pos, vel); Size = size; Damage = dmg}
+    val ExpRaduis: single
+    val ExpDamage: int
+    new(id, pos, vel, size, dmg, radius, expDamage) = {inherit SimModel(id, pos, vel); Size = size; Damage = dmg; ExpRaduis = radius; ExpDamage = expDamage}
 
 type PlayerModel =
     inherit SimModel
 
     val mutable DamageReceived: int
-    val HitBy : array<bool>
-    new(id, pos, vel, bullets) = {inherit SimModel(id, pos, vel); DamageReceived = 0; HitBy=Array.create bullets false}
+    val HitBy : array<DamageType>
+    new(id, pos, vel, bullets) = {inherit SimModel(id, pos, vel); DamageReceived = 0; HitBy=Array.create bullets DamageType.Miss}
 
 module Oracle =
     let bulletDiscretion = 10
@@ -144,10 +153,21 @@ module Oracle =
         let checkUnitHit (p:Vector2) =
             checkUnitXHit p.X p.Y && checkUnitYHit p.X p.Y
 
+        
+        let checkTargetHitByExp (unit:Vector2) (exp:Vector2) (radius:single)=
+            let dx, dy = abs(unit.X - exp.X), abs(unit.Y - exp.Y)
+            dx < radius + 0.5f && dy < radius + 0.9f
+
         let discretion =single( Constants.Ticks_Per_Second * bulletDiscretion)
         
         let bullets = game.Bullets |> Array.mapi(fun i x -> 
-            BulletModel(i, Vector2.fromVec2Double x.Position, (Vector2.fromVec2Double x.Velocity) / discretion, single x.Size, x.Damage))
+                BulletModel(i, 
+                            Vector2.fromVec2Double x.Position, 
+                            (Vector2.fromVec2Double x.Velocity) / discretion, 
+                            single x.Size, 
+                            x.Damage,
+                            (match x.ExplosionParameters with Some exp -> single exp.Radius | _ -> 0.0f),
+                             match x.ExplosionParameters with Some exp -> exp.Damage | _ -> 0))
 
         let players = game.Units 
                             |> Array.filter(fun x -> x.PlayerId = myId)
@@ -165,18 +185,26 @@ module Oracle =
                     
             for b in bullets |> Seq.filter(fun x -> x.IsMoving) do
                 let newPos = b.Pos + b.Velocity
+                let mutable exploded = false
                 if not (checkBulletWallHit tiles b.Size newPos) then
                     b.Pos <- newPos
                     for p in players do
                         if checkTargetHit p.Pos b.Pos then
-                            p.HitBy.[b.Id] <- true                 
+                            p.HitBy.[b.Id] <- p.HitBy.[b.Id] ||| DamageType.Hit
+                            exploded <- true
                 else
                     b.IsMoving <- false
+                    exploded <- true
+                if exploded && b.ExpRaduis > 0.0f then                      
+                    for p in players do
+                        if checkTargetHitByExp p.Pos b.Pos b.ExpRaduis then
+                            p.HitBy.[b.Id] <- p.HitBy.[b.Id] ||| DamageType.Explosion
 
         for p in players do
             for i in 0..p.HitBy.Length-1 do
                 let h = p.HitBy.[i]
-                p.DamageReceived <- p.DamageReceived + (match h with true -> bullets.[i].Damage | _ -> 0)           
+                p.DamageReceived <- p.DamageReceived + (match h with DamageType.Hit -> bullets.[i].Damage | _ -> 0) 
+                p.DamageReceived <- p.DamageReceived + (match h with DamageType.Explosion -> bullets.[i].ExpDamage | _ -> 0)           
 
         players
 

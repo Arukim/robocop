@@ -85,7 +85,7 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                     targetPos <- nearestHealthPack.Value
                     else
                     targetPos <- startPos.Value
-            else if armory.HasMines && unit.Mines < 2 then
+            else if armory.HasMines && unit.Mines < 1 then
                 if targetMine.IsNone then
                     targetMine <- armory.SelectMine distMap
 
@@ -120,7 +120,7 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
 
 
         let mutable (jump, jumpDown, velocity) = Controller.makeMove game.Level.Tiles unit myCell nextTile
-
+        
         if not (evasion |> Array.forall(fun x -> x.DamageReceived = 0)) then
 
 
