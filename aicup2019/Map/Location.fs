@@ -8,16 +8,9 @@ open System
 
 
 type Location() =
-       let genCell x y v = ({X=x;Y=y}:Cell),v 
-       let collisionFilterFall cell =
-           cell = Tile.Wall || cell = Tile.Ladder || cell = Tile.Platform        
+       let genCell x y v = ({X=x;Y=y}:Cell),v    
        let collisionFilterJump cell =
            cell = Tile.Wall
-       let collisionFilterGrounds cell =
-           cell = Tile.Wall || cell = Tile.Platform 
-       
-       
-
 
        let grounds = Array.empty<ZoneGround>
        let ladders = Array.empty<ZoneLadder>
@@ -58,13 +51,16 @@ type Location() =
         member this.JumpUpParse (tiles:Tile[][]) =  
             let getUps (cell:Cell) =
                 let (left, up, right) = cell.up.left, cell.up, cell.up.right
+                let upUp = up.up
                 seq {
-                    if up.Y < tiles.Length && tiles.[up.X].[up.Y] <> Tile.Wall then
-                        yield (cell, up)
-                        if left.X >= 0 && tiles.[left.X].[left.Y] <> Tile.Wall  then
-                            yield (cell, left)                            
-                        if right.Y < tiles.Length && tiles.[right.X].[right.Y] <> Tile.Wall then
-                            yield (cell, right)
+                    if up.Y < tiles.Length - 1 
+                        && tiles.[up.X].[up.Y] <> Tile.Wall 
+                        && tiles.[upUp.X].[upUp.Y] <> Tile.Wall then
+                            yield (cell, up)
+                            if left.X >= 0 && tiles.[left.X].[left.Y] <> Tile.Wall  then
+                                yield (cell, left)                            
+                            if right.Y < tiles.Length && tiles.[right.X].[right.Y] <> Tile.Wall then
+                                yield (cell, right)
                 } 
                          
             tiles |> Matrices.allTilesG genCell
@@ -116,21 +112,21 @@ type Location() =
             this.JumpPads |> Seq.map(fun x -> x.Cell, x.TargetCell)            
 
        member this.drawPathMap =
-            ignore()
-            //this.BasePathMap |> Map.iter(
-            //                    fun _ b -> b |> Seq.iter(fun link -> 
-            //                                                let color = match link.Type with
-            //                                                                | ConnectionType.JumpDown -> Palette.DarkSlateBlue
-            //                                                                | ConnectionType.JumpUp -> Palette.LightSeaGreen
-            //                                                                | ConnectionType.JumpUpTouch -> Palette.DarkOliveGreen
-            //                                                                | ConnectionType.JumpPad -> Palette.GreenYellow
-            //                                                                | ConnectionType.Walk -> Palette.CornflowerBlue
-            //                                                                | ConnectionType.JumpDownTouch -> Palette.RoyalBlue
-            //                                                Logger.drawLine link.Source.toCenter link.Target.toCenter color
-            //                                                )
+            //ignore()
+            this.BasePathMap |> Map.iter(
+                                fun _ b -> b |> Seq.iter(fun link -> 
+                                                            let color = match link.Type with
+                                                                            | ConnectionType.JumpDown -> Palette.DarkSlateBlue
+                                                                            | ConnectionType.JumpUp -> Palette.LightSeaGreen
+                                                                            | ConnectionType.JumpUpTouch -> Palette.DarkOliveGreen
+                                                                            | ConnectionType.JumpPad -> Palette.GreenYellow
+                                                                            | ConnectionType.Walk -> Palette.CornflowerBlue
+                                                                            | ConnectionType.JumpDownTouch -> Palette.RoyalBlue
+                                                            Logger.drawLine link.Source.toCenter link.Target.toCenter color
+                                                            )
                                     
                                     
-            //                        )
+                                    )
 
        member this.buildBasePathMap (tiles:Tile[][]) =
            let pathsUp = tiles |> this.JumpUpParse
