@@ -5,7 +5,8 @@ open AiCup2019.Model
 open Robocop.Core
 open Robocop.Utils
 
-type TraceParams = {Source: Vector2; BulletSpeed: single; BulletSize: single; Direction: Vector2; Spread: single; Count: int;}
+type TraceParams = {Source: Vector2; BulletSpeed: single; BulletSize: single; BulletExplosionRadius: single;
+                    Direction: Vector2; Spread: single; Count: int;}
 type TargetParams = {Pos: Vector2; Direction: Vector2; ComradPos: Vector2; ComradDirection: Vector2}
 
 type SimModel = 
@@ -65,7 +66,7 @@ module Oracle =
             sanityCheckX a || sanityCheckY c || tiles.[a].[c] = Tile.Wall || tiles.[b].[c] = Tile.Wall
         
         let checkUnitYHit x y =
-            let a, b, c = (int(y - 1.0f), int(y + 1.0f), int x)
+            let a, b, c = (int(y - 0.9f), int(y + 0.9f), int x)
             sanityCheckX c || sanityCheckY a || tiles.[c].[a] = Tile.Wall || tiles.[c].[b] = Tile.Wall
 
         let checkHit (unit:Vector2) (delta:Vector2) =
@@ -80,6 +81,13 @@ module Oracle =
                     | false -> newPos.Y
             )            
 
+        let checkExplosion (unit:Vector2) (exp:Vector2) =
+            if trace.BulletExplosionRadius > 0.0f then
+                let dx, dy = abs(unit.X - exp.X), abs(unit.Y - exp.Y)
+                dx < trace.BulletExplosionRadius + 0.5f
+                    && dy < trace.BulletExplosionRadius + 0.9f
+            else
+                false
 
         let rec sim unit comrad (bullets: (Vector2*Vector2) list) =
             seq {
@@ -87,13 +95,15 @@ module Oracle =
 
                 let newComrad = checkHit comrad comardMove
                 
-                let (hits, misses) = bullets |> List.choose(fun (p,d) ->
-                                                                let newPos = p + d
-                                                                match checkBulletWallHit tiles trace.BulletSize newPos || checkTargetHit newComrad newPos with
-                                                                    | false -> Some (newPos,d)
-                                                                    | _ -> None)
-                                         |> List.partition(fun (p,_) -> checkTargetHit newUnit p)
-                
+
+                let (walls, others) = bullets |> List.map(fun (p,d) -> (p+d,d))
+                                              |> List.partition(fun (p,_) -> checkBulletWallHit tiles trace.BulletSize p || checkTargetHit newComrad p)
+
+                let expHits = walls |> List.filter(fun (p, _) -> checkExplosion newUnit p)
+
+                let (hits, misses) = others |> List.partition(fun (p,_) -> checkTargetHit newUnit p)
+
+                yield! expHits
                 yield! hits
 
                 if not misses.IsEmpty then yield! sim newUnit newComrad misses
