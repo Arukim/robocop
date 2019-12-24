@@ -5,6 +5,7 @@ module Constants =
     let Max_Jump_Pad = 11
     let Ticks_Per_Second = 60
     let Max_Speed = 10.0f
+    let Tick_Movement = Max_Speed / single Ticks_Per_Second
     let Max_Jump = Max_Speed * Unit_Jump_Time
     let One_Tick_Move = Max_Speed / (single Ticks_Per_Second)
     let One_Tick_Bullet_Move = 50.0f / (single Ticks_Per_Second)

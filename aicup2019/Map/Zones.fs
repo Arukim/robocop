@@ -5,19 +5,19 @@ open Robocop.Utils
 open Robocop.Core
 
 type CellTile = {Cell: Cell; Tile: Tile}
-type ConnectionType = Walk | JumpUp | JumpUpTouch | JumpPad | JumpDown | JumpDownTouch
+type LinkType = Walk | JumpUp | JumpUpTouch | JumpPad | JumpDown | JumpDownTouch
 
-type Link = {Source: Cell; Target: Cell; Type: ConnectionType; Dist: single}        
+type Link = {Source: Cell; Target: Cell; Type: LinkType; Dist: single}        
 
 type ZoneGround(cells: array<Cell>) =
     member _.Cells = cells
     member _.Standable (tiles:Tile[][]) =  
-        seq { 
-                let head, tail = (cells |> Array.head).up.left, (cells |> Array.last).right.up
-                match tiles.[head.X].[head.Y] with Tile.Empty -> yield head; | _ -> ignore()
-                yield! (cells |> Seq.map(fun x -> x.up))
-                match tiles.[tail.X].[tail.Y] with Tile.Empty -> yield tail; | _ -> ignore()
-            }
+       seq { 
+           let head, tail = (cells |> Array.head).left, (cells |> Array.last).right
+           match tiles.[head.X].[head.Y] with Tile.Ladder | Tile.Platform -> yield head.up; | _ -> ignore()
+           yield! (cells |> Seq.map(fun x -> x.up))
+           match tiles.[tail.X].[tail.Y] with Tile.Ladder | Tile.Platform -> yield tail.up; | _ -> ignore()
+       }
     member _.EdgeCells (tiles:Tile[][]) = 
             let head, tail = cells |> Array.head, cells |> Array.last
             let a = if tiles.[head.X - 1].[head.Y] = Tile.Empty then Some head else None
@@ -27,21 +27,18 @@ type ZoneGround(cells: array<Cell>) =
 type ZoneLadder(cells: array<Cell>) =
     member _.Cells = cells
     member _.Standable = seq { yield! cells ; yield (cells |> Array.last).up; }
-    member _.TopBottomEdges=
-        let head, tail = cells |> Array.head, cells |> Array.last
-        seq { single head.X, single head.Y + 0.5f; single tail.X, single tail.Y + 1.0f}
     
 type ZonePlatform(cells: array<Cell>) =
     member _.Cells = cells
     member _.WalkCells = cells |> Seq.map(fun c -> {X=c.X; Y = c.Y + 1}: Cell)
     
     member _.Standable (tiles:Tile[][]) =  
-        seq { 
-                let head, tail = (cells |> Array.head).up.left, (cells |> Array.last).right.up
-                match tiles.[head.X].[head.Y] with | x  when x = Tile.Empty || x = Tile.Ladder -> yield head; | _ -> ignore()
-                yield! (cells |> Seq.map(fun x -> x.up))
-                match tiles.[tail.X].[tail.Y] with | x when x = Tile.Empty || x = Tile.Ladder -> yield tail; | _ -> ignore()
-            }
+       seq { 
+            let head, tail = (cells |> Array.head).left, (cells |> Array.last).right
+            match tiles.[head.X].[head.Y] with | x  when x = Tile.Ladder -> yield head; | _ -> ignore()
+            yield! (cells |> Seq.map(fun x -> x.up))
+            match tiles.[tail.X].[tail.Y] with | x when x = Tile.Ladder -> yield tail; | _ -> ignore()
+        }
 
 type ZoneJumpPad(cell: Cell, targetCell: Cell) = 
     member _.Cell = cell

@@ -22,7 +22,7 @@ type Strategy(game: Game, myTeam: int) =
                               |> Map.ofArray                                  
 
     let calcTick game = 
-        location.drawPathMap
+        //location.drawPathMap()
         game.Units |> Array.iter(fun x -> unitSim.AddTurn x game.CurrentTick)
         evasion <- Oracle.traceEvasion Constants.Evasion_Time myTeam game
         ignore()
@@ -30,7 +30,10 @@ type Strategy(game: Game, myTeam: int) =
 
     let cleanPathMap() =
         let (_, dist) = Pathfinder.dijkstra (location.BuildMaskedMap Array.empty) (Cell.fromVector game.Units.[0].Position) (Constants.Max_Jump * 2.0f)
+        
+        location.drawPathMap()
         location.BasePathMap <- location.BasePathMap |> Array.filter(fun l -> dist.[l.Source].Dist <> infinityf)
+
         ignore()
 
     member _.Init() = 

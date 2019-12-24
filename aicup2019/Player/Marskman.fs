@@ -100,7 +100,7 @@ type Marksman(unitSim: UnitSim, props: Properties) =
     
             //Logger.drawText(sprintf "Hits %A, Hits360 %A, shoot %A" (hits |> Seq.length) (hits360 |> Seq.length) shoot)
         
-        Logger.drawText(sprintf "Shoot %A, Angle %A, Reload %A" shoot angle reload)
+        //Logger.drawText(sprintf "Shoot %A, Angle %A, Reload %A" shoot angle reload)
         (shoot, angle, reload)
 
 
