@@ -34,10 +34,16 @@ type Armory(game: Game) =
             freeWeapons <- freeWeapons |> List.filter(fun (pos,_) -> pos <> fst wpn.Value)            
             selectedWeapons <- selectedWeapons @ [wpn.Value]
 
-
         match wpn with
             | Some (pos, _) -> Some pos
             | _ -> None
+
+    member _.DeselectWeapon dist = 
+        let wpn = selectedWeapons |> List.filter(fun (pos,_) -> pos = dist)
+                                  |> List.tryHead
+        if wpn.IsSome then
+            selectedWeapons <- selectedWeapons |> List.filter(fun (pos,_) -> pos <> fst wpn.Value)
+            freeWeapons <- freeWeapons @ [wpn.Value]
 
     member _.SelectMine dist =
         let mine = freeMines |> List.sortBy(fun p -> Pathfinder.findDistance dist (Cell.fromVector p))

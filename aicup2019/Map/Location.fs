@@ -92,23 +92,14 @@ type Location() =
                                                          })                                    
                                     |> Seq.collect(fun x -> x)
 
-            let ladders = this.Ladders |> Seq.collect(fun x -> x.Standable)
-                                            |> Seq.map(fun x ->
-                                                            let (l,r) = x.left, x.right
-                                                            seq {
-                                                                if tiles.[l.X].[l.Y] = Tile.Empty then yield (x, l); yield (l, x)
-                                                                if tiles.[r.X].[r.Y] = Tile.Empty then yield (x, r); yield (r, x)
-                                                            })
-                                        |> Seq.collect(fun x -> x)
-           
+                      
 
             let platforms = this.Platforms |> Seq.collect(fun x -> x.Cells)
                                            |> Seq.map(fun x -> [(x, x.down);(x.up, x)])
                                            |> Seq.collect(fun x -> x)
 
             
-            edges |> Seq.append ladders
-                  |> Seq.append platforms         
+            edges |> Seq.append platforms         
                
        member this.GroundsAndPlatformsParse (tiles:Tile[][]) =
         

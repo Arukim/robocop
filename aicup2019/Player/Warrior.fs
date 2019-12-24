@@ -16,6 +16,11 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
     let mutable targetWeapon: Option<Vec2Double> = None
     let mutable targetMine: Option<Vec2Double> = None
     let mutable prevCell = {X=0;Y=0}:Cell
+    
+    let isWinning (game:Game) (unit:Unit) = 
+        let my = game.Players |> Seq.find(fun x -> x.Id = initial.PlayerId)
+        let enemy = game.Players |> Seq.find(fun x -> x.Id <> initial.PlayerId)
+        my.Score > enemy.Score
 
     member _.DoTurn (unit:Unit) (game:Game) (location:Location) (evasion:PlayerModel[])=
         let nextLeg myPos = 
@@ -58,7 +63,8 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
             else                
                 if not (armory.HasWeapon targetWeapon.Value) then
                      targetWeapon <- armory.SelectWeapon(distMap)
-        else
+        else if targetWeapon.IsSome then
+            armory.DeselectWeapon targetWeapon.Value
             targetWeapon <- None
 
         if targetMine.IsSome then
@@ -83,8 +89,9 @@ type Warrior(armory: Armory, unitSim: UnitSim, props: Properties, initial: Unit,
                                                         |> Seq.tryFind(fun _ -> true)
                 if nearestHealthPack.IsSome then
                     targetPos <- nearestHealthPack.Value
-                    else
+                else if isWinning game unit then
                     targetPos <- startPos.Value
+                
             else if armory.HasMines && unit.Mines < 1 then
                 if targetMine.IsNone then
                     targetMine <- armory.SelectMine distMap

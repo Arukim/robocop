@@ -7,7 +7,7 @@ open System.Numerics
 open Robocop.Core
 
 module Controller =
-    let defaultMove unit (source:Vector2) (target:Vector2) (tgt:Cell)  =
+    let defaultMove (tiles: Tile[][]) unit (source:Vector2) (target:Vector2) (tgt:Cell)  =
         let checkJump =
             match unit.OnLadder with
                 | true -> match target.Y - source.Y with
@@ -28,9 +28,12 @@ module Controller =
                     | t when t < 0.0f -> -1.0f                
                     | _ -> 0.0f
 
-        let spd = match abs (target.X - source.X) with
+        let mutable spd = match abs (target.X - source.X) with
                     | t when t > Constants.One_Tick_Move -> 10.0f
                     | d -> d * single Constants.Ticks_Per_Second
+
+        if tiles.[tgt.X].[tgt.Y-1] = Tile.JumpPad then
+            spd <- 7.5f
 
         let tgt = float (dir * spd)
 
@@ -47,5 +50,5 @@ module Controller =
        
         match tgt.Y < src.Y && unit.OnGround with
                 | true -> (jumpDownMove tiles src)
-                | false -> (defaultMove unit source target tgt)
+                | false -> (defaultMove tiles unit source target tgt)
 
